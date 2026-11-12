@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Drum Kit Builder</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Black+Ops+One&family=Bungee&family=Permanent+Marker&family=Press+Start+2P&family=Russo+One&family=Rubik+Mono+One&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+  <div class="editor">
+
+    <!-- Kit -->
+    <section class="group" aria-label="Kit">
+      <div class="field-row">
+        <label for="kitName">Kit name</label>
+        <input type="text" id="kitName" placeholder="My Drum Kit" autocomplete="off">
+      </div>
+      <div class="field-row">
+        <label for="tip">Your tag</label>
+        <input type="text" id="tip" placeholder="@yourname" autocomplete="off">
+      </div>
+
+      <details class="disclosure" id="bannerSec">
+        <summary><span>Banner</span><span class="value" id="bannerValue"></span></summary>
+        <div class="panel">
+          <div class="seg" role="group" aria-label="Banner type" id="bannerMode">
+            <button type="button" data-v="text">Text</button><button type="button" data-v="image">Image</button><button type="button" data-v="none">None</button>
+          </div>
+          <div id="bannerImageOpts" class="stack">
+            <div class="inline">
+              <label class="btn" for="bannerFile">Choose image…</label><input type="file" id="bannerFile" accept="image/*" class="vh">
+              <label class="check"><input type="checkbox" id="bannerFit"> Resize to <input type="number" id="bannerW" min="80" max="800" class="num"> px wide</label>
+            </div>
+            <p class="note">FL shows images at actual size. About 250 px wide fits the browser panel.</p>
+          </div>
+          <div id="bannerTextOpts" class="stack">
+            <div class="field-row"><label for="bannerSub">Subtitle</label><input type="text" id="bannerSub" placeholder="Uses your tag"></div>
+            <div class="inline">
+              <label class="swatch"><input type="color" id="bannerBg"> Background</label>
+              <label class="swatch"><input type="color" id="bannerInk"> Text</label>
+            </div>
+          </div>
+          <div class="inline">
+            <span class="note">Kit folder icon</span><select id="kitIcon" class="compact"></select>
+            <label class="check"><input type="checkbox" id="kitColorOn"> Name color</label><input type="color" id="kitColor" aria-label="Kit name color">
+          </div>
+        </div>
+      </details>
+
+      <details class="disclosure" id="styleSec">
+        <summary><span>Label style</span><span class="value" id="styleValue"></span></summary>
+        <div class="panel">
+          <div class="field-row"><label for="font">Font</label><select id="font"></select></div>
+          <div class="field-row"><label for="size">Size</label><div class="inline grow"><input type="range" id="size" min="9" max="20" step="1"><span class="note" id="sizeVal"></span></div></div>
+          <div class="inline">
+            <label class="swatch"><input type="color" id="labelColor"> Text</label>
+            <label class="check"><input type="checkbox" id="matchColor"> Match each folder's color</label>
+          </div>
+          <div class="field-row"><label for="outline">Outline</label><div class="inline grow"><input type="range" id="outline" min="0" max="3" step="0.5"><input type="color" id="outlineColor" aria-label="Outline color"><span class="note" id="outlineVal"></span></div></div>
+          <label class="check"><input type="checkbox" id="shadow"> Drop shadow</label>
+          <details class="sub">
+            <summary>Advanced</summary>
+            <div class="stack">
+              <div class="field-row"><label>Label image size</label><div class="inline"><input type="number" id="lw" min="60" max="600" class="num" aria-label="Width"> × <input type="number" id="lh" min="12" max="80" class="num" aria-label="Height"> px</div></div>
+              <div class="field-row"><label for="heightOfs">Row spacing</label><input type="number" id="heightOfs" min="0" max="40" class="num"></div>
+              <div class="field-row"><label for="colorOrder">Color format</label><select id="colorOrder"><option value="bgr">FL ($BBGGRR)</option><option value="rgb">Plain hex ($RRGGBB)</option></select></div>
+              <label class="check"><input type="checkbox" id="numbering"> Number folders (1 808s, 2 Claps…)</label>
+              <label class="check"><input type="checkbox" id="sortGroup"> Lock folder order (SortGroup)</label>
+            </div>
+          </details>
+        </div>
+      </details>
+    </section>
+
+    <!-- Folders -->
+    <div class="group-head">
+      <h2>Folders</h2>
+      <label class="link" for="addFiles">Add samples</label><input type="file" id="addFiles" multiple class="vh">
+    </div>
+    <div id="unsorted"></div>
+    <section class="group folders" id="cats" aria-label="Folders"></section>
+    <div class="add-row">
+      <button type="button" class="plus" id="addCat" aria-label="Add folder" title="Add folder">+</button>
+    </div>
+    <p class="note center">Drag samples or folders onto the page. They're sorted by name, and missing folders are made for you.</p>
+  </div>
+
+  <aside class="side" aria-label="Preview and export">
+    <div class="preview-head">
+      <h2>Preview</h2>
+      <div class="seg small" role="group" aria-label="Preview zoom" id="zoom"><button type="button" data-v="1">1×</button><button type="button" data-v="2">2×</button></div>
+    </div>
+    <div class="fl" id="fl"></div>
+    <p class="note" id="summary"></p>
+    <button type="button" class="btn primary wide" id="dlZip">Download Kit</button>
+    <button type="button" class="link" id="writeDir" hidden>Save into a folder…</button>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+    <details class="sub">
+      <summary>What gets created</summary>
+      <p class="note">Unzip into <b>FL Studio/Data/Patches</b>, then refresh FL's browser.</p>
+      <pre class="tree" id="tree"></pre>
+    </details>
+  </aside>
+</main>
+<div id="dropveil" aria-hidden="true"><div>Drop to add samples</div></div>
+<script src="app.js"></script>
+</body>
+</html>
