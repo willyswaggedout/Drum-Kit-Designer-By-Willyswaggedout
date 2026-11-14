@@ -1,5 +1,5 @@
 {
-  "name": "drum-kit-builder",
+  "name": "drum-kit-designer",
   "productName": "Drum Kit Designer",
   "version": "1.0.0",
   "description": "Build custom FL Studio drum kits: folders, .nfo files, label images and banners. By @Willyswaggedout.",
@@ -7,19 +7,19 @@
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder",
-    "dist:win": "electron-builder --win",
-    "dist:mac": "electron-builder --mac"
+    "dist:win": "electron-builder --win"
   },
   "devDependencies": {
     "electron": "^33.0.0",
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "com.drumkitbuilder.app",
+    "appId": "com.willyswaggedout.drumkitdesigner",
     "productName": "Drum Kit Designer",
     "files": [
       "app/**/*",
       "electron/**/*",
+      "build/icon.png",
       "package.json"
     ],
     "directories": {
@@ -32,13 +32,17 @@
       ],
       "icon": "build/icon.ico"
     },
-    "mac": {
-      "target": [
-        "dmg"
-      ],
-      "category": "public.app-category.music",
-      "icon": "build/icon.png"
+    "publish": null,
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "Drum Kit Designer",
+      "artifactName": "Drum Kit Designer Setup ${version}.${ext}"
     },
-    "publish": null
-  }
+    "portable": {
+      "artifactName": "Drum Kit Designer ${version}.${ext}"
+    },
+    "copyright": "By @Willyswaggedout"
+  },
+  "author": "@Willyswaggedout"
 }

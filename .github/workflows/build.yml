@@ -1,10 +1,11 @@
-# Builds the Windows and macOS apps on GitHub's servers.
-# Push a tag like v0.1.0 to publish a release with both downloads attached,
-# or run it by hand from the Actions tab to just get the build files.
-name: Build apps
+# Builds the Windows app on GitHub's servers.
+# Every push to main builds it; download the result from the run's "Artifacts".
+# Push a tag like v1.0.0 to also publish a release with the downloads attached.
+name: Build Windows app
 
 on:
   push:
+    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 
@@ -13,10 +14,7 @@ permissions:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,15 +22,13 @@ jobs:
           node-version: 22
       - run: npm install
       - name: Build
-        run: npx electron-builder --publish never
+        run: npx electron-builder --win --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
       - uses: actions/upload-artifact@v4
         with:
-          name: drum-kit-builder-${{ matrix.os }}
-          path: |
-            dist/*.exe
-            dist/*.dmg
+          name: Drum-Kit-Designer-Windows
+          path: dist/*.exe
           if-no-files-found: error
 
   release:

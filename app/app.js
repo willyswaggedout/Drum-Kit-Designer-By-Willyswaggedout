@@ -1114,7 +1114,7 @@ addEventListener('dragleave', e => { if (!e.relatedTarget) document.querySelecto
 addEventListener('dragover', e => {
   if (!hasFiles(e)) return; e.preventDefault();
   const onFolder = e.target.closest && e.target.closest('.folder');
-  const onFontDrop = e.target.closest && e.target.closest('.fonts-panel');
+  const onFontDrop = e.target.closest && e.target.closest('.fonts-block');
   document.querySelector('.font-drop').classList.toggle('drag', !!onFontDrop);
   document.querySelectorAll('.folder.drag').forEach(x => { if (x !== onFolder) x.classList.remove('drag'); });
   if (onFolder) onFolder.classList.add('drag');
@@ -2102,7 +2102,7 @@ function hideModal(m) { // play the exit animation, then actually hide
   if (m.hidden) return;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { m.hidden = true; return; }
   m.classList.add('closing');
-  setTimeout(() => { m.classList.remove('closing'); m.hidden = true; }, 150);
+  setTimeout(() => { if (!m.classList.contains('closing')) return; /* reopened meanwhile */ m.classList.remove('closing'); m.hidden = true; }, 150);
 }
 function closeConfirm(run) {
   const f = confirmYes, from = confirmFrom; confirmYes = confirmFrom = null; hideModal($('confirmDlg'));
@@ -2562,6 +2562,7 @@ document.addEventListener('click', e => {
   const root = document.documentElement, cur = () => root.dataset.theme || 'oxblood';
   let saved;
   const setFavicon = () => {
+    if (window.DKD_FIXED_ICON) return; // the desktop app keeps its own icon
     try {
       const cs = getComputedStyle(root), a = cs.getPropertyValue('--accent').trim(), bg = cs.getPropertyValue('--bg').trim();
       const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='${bg}'/><ellipse cx='50' cy='40' rx='28' ry='11' fill='none' stroke='${a}' stroke-width='6'/><path d='M22 40v22c0 6 12.5 11 28 11s28-5 28-11V40' fill='none' stroke='${a}' stroke-width='6' stroke-linecap='round'/></svg>`;

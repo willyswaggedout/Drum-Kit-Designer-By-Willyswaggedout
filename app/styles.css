@@ -43,10 +43,18 @@ button,input,select{font:inherit;color:inherit}
 h2{font-size:13px;font-weight:700;color:var(--text2);margin:0;text-transform:none;letter-spacing:.1px}
 
 /* the side columns carry 36px headers; the editor starts level with their boxes */
-.editor{margin-top:36px}
-main{display:grid;grid-template-columns:minmax(150px,190px) minmax(0,1fr) var(--side-w,340px);gap:24px;max-width:calc(900px + var(--side-w,340px));margin:0 auto;padding:20px 28px 60px}
-@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr) var(--side-w,340px)}.fonts-panel{grid-column:1/-1;order:9;position:static!important}}
-@media (max-width:860px){main{grid-template-columns:1fr;padding:24px 16px 48px;gap:24px}.side{position:static!important}.fl{overflow-x:auto}.editor{margin-top:0}}
+.editor{margin-top:0}
+.fonts-block>h2{height:36px;padding:0 4px 8px;display:flex;align-items:center}
+.fonts-block{margin-bottom:28px}
+.fonts-block .font-drop{padding:12px 10px}
+/* folders on the left, preview in the middle, fonts on the right */
+.editor{order:1}.side{order:2}.fonts-panel{order:3}
+main{display:grid;grid-template-columns:minmax(0,1fr) var(--side-w,340px) minmax(0,1fr);gap:24px;margin:0;padding:20px 28px 60px}
+/* the two outer columns are equal, so the preview sits exactly in the middle of the window */
+main>.editor{justify-self:start;width:100%;max-width:760px}
+main>.fonts-panel{justify-self:start;width:100%;max-width:320px}
+@media (max-width:770px){main{grid-template-columns:minmax(0,1fr) var(--side-w,340px)}main>.editor{max-width:none}.fonts-panel{grid-column:1/-1;order:9;position:static!important}main>.fonts-panel{max-width:none;justify-self:stretch}}
+@media (max-width:602px){main{grid-template-columns:1fr;padding:24px 16px 48px;gap:24px}.side{position:static!important}.fl{overflow-x:auto}.editor{margin-top:0}}
 
 /* grouped list, iOS-settings style */
 .group{background:var(--surface);border-radius:0;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 28px -14px rgba(0,0,0,.55)}
@@ -178,7 +186,10 @@ ul.flist li button.play.on{background:var(--accent);color:var(--accent-ink)}
 .fl.zoom img{image-rendering:pixelated}
 .side.tall{position:static}
 .side>.note{margin-top:10px;padding:0 4px}
-.side .link{display:block;margin:6px auto 0}
+.side .link,.actions .link{display:block;margin:6px auto 0}
+.actions{display:flex;flex-direction:column}
+.actions>.note{margin:10px 0 0;padding:0 4px;text-align:center}
+.actions .btn.wide{margin-top:0}
 .status{position:fixed;left:50%;bottom:22px;transform:translate(-50%,10px);z-index:70;max-width:min(86vw,460px);background:var(--surface2);color:var(--text);font-size:13px;padding:9px 16px;border-radius:0;box-shadow:0 8px 28px rgba(0,0,0,.4),inset 0 0 0 1px var(--sep);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .22s cubic-bezier(.3,.8,.3,1);text-align:center}
 .status.show{opacity:1;transform:translate(-50%,0)}
 @keyframes statuspop{from{transform:translate(-50%,0) scale(.96)}}
@@ -206,7 +217,8 @@ ul.flist.sortable li.lifted{z-index:2;transition:background-color .12s ease,box-
 ul.flist.sortable li.settling{z-index:2;background:var(--surface2)}
 
 /* custom fonts panel */
-.fonts-panel{position:sticky;top:70px;align-self:start}
+.fonts-panel{position:sticky;top:70px;align-self:start;padding-top:36px}
+.fonts-panel .bulk{margin-top:24px}
 .fonts-panel>h2{height:36px;padding:0 4px 8px;display:flex;align-items:center}
 .font-drop{display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;border:1.5px dashed var(--sep);border-radius:0;background:var(--surface);color:var(--text2);padding:16px 10px;cursor:pointer}
 .font-drop:hover{border-color:var(--accent);color:var(--text)}
@@ -415,7 +427,7 @@ input[type=color]:disabled + .cc{opacity:.35;pointer-events:none}
 .btn:active,.tpl .link:active,#writeDir:active,.plus:active,.fp-btn:active{transform:scale(.97)}
 button{-webkit-tap-highlight-color:transparent}
 
-.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:14px max(28px,calc((100% - 900px - var(--side-w,340px))/2 + 28px));border-bottom:1px solid transparent;transition:background .25s ease,border-color .25s ease}
+.topbar{position:sticky;top:0;z-index:50;display:flex;flex-direction:row-reverse;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid transparent;transition:background .25s ease,border-color .25s ease}
 html.scrolled .topbar{background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom-color:var(--sep)}
 @media (prefers-reduced-transparency:reduce){html.scrolled .topbar{background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none}}
 .group-head{position:sticky;top:53px;z-index:5;background:color-mix(in srgb,var(--bg) 76%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
@@ -424,7 +436,7 @@ html.scrolled .topbar{background:color-mix(in srgb,var(--bg) 72%,transparent);ba
 .appname .by{margin-left:6px}
 .appname a{color:inherit;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1.5px;border-radius:0}
 .appname a:hover{opacity:.8}
-.top-r{display:flex;align-items:center;gap:14px}
+.top-r{display:flex;flex-direction:row-reverse;align-items:center;gap:14px}
 .savestate{font-size:12px;color:var(--text2);opacity:0;transition:opacity .4s ease,color .4s ease;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .savestate.show{opacity:.7}
 .savestate.show.dim{opacity:.28}
@@ -432,7 +444,7 @@ html.scrolled .topbar{background:color-mix(in srgb,var(--bg) 72%,transparent);ba
 .savestate.pulse{opacity:1}
 .savestate.pulse::before{background:var(--accent);opacity:1;transform:scale(1.25)}
 .savestate.bad{color:#E5776E;opacity:1}
-@media (max-width:560px){.savestate{display:none}}
+@media (max-width:392px){.savestate{display:none}}
 .restoring *,.restoring *::before,.restoring *::after,.restoring ::details-content{transition:none!important;animation:none!important}
 .theme{position:relative;z-index:55}
 .theme .fp{position:static;flex:none;margin:0;width:auto}
@@ -469,7 +481,7 @@ html.scrolled .topbar{background:color-mix(in srgb,var(--bg) 72%,transparent);ba
 /* theme switch: colors sweep across the page, left to right */
 html.theming *,html.theming *::before,html.theming *::after{transition:background-color .3s ease,color .3s ease,border-color .3s ease,box-shadow .3s ease,fill .3s ease,stroke .3s ease}
 html.theming .topbar *{transition-delay:0s}
-html.theming .fonts-panel *{transition-delay:.05s}
+html.theming .fonts-panel *,html.theming .fonts-block *{transition-delay:.05s}
 html.theming .editor *{transition-delay:.1s}
 html.theming .side *{transition-delay:.15s}
 @media (prefers-reduced-motion:reduce){html.theming *{transition:none!important}}

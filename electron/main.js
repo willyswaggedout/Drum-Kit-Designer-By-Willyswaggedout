@@ -11,6 +11,8 @@ function createWindow() {
     minHeight: 500,
     backgroundColor: '#161618',
     title: 'Drum Kit Designer',
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
+    autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
