@@ -1,0 +1,25 @@
+IDI_ICON1 ICON "../../build/icon.ico"
+1 VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEOS 0x40004
+FILETYPE 0x1
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "@Willyswaggedout"
+      VALUE "FileDescription", "Delete Drum Kit Designer"
+      VALUE "FileVersion", "1.0.0"
+      VALUE "ProductName", "Drum Kit Designer"
+      VALUE "ProductVersion", "1.0.0"
+      VALUE "OriginalFilename", "Delete Drum Kit Designer.exe"
+      VALUE "LegalCopyright", "By @Willyswaggedout"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200
+  END
+END

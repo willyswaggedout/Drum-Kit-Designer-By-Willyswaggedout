@@ -25,6 +25,12 @@ jobs:
         run: npx electron-builder --win --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Build "Delete Drum Kit Designer.exe"
+        working-directory: tools/delete
+        run: go build -trimpath -ldflags "-s -w -H windowsgui" -o "../../dist/Delete Drum Kit Designer.exe" .
       - uses: actions/upload-artifact@v4
         with:
           name: Drum-Kit-Designer-Windows
