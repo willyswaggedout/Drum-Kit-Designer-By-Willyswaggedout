@@ -1785,8 +1785,56 @@ $('bgReset').onclick = () => { S.bannerBgPos = null; schedule(); };
 function syncPreviewLock() {
   const open = [...document.querySelectorAll('details.disclosure')].some(d => d.open) || expanded.size > 0;
   const fl = $('fl'); if (fl) fl.classList.toggle('locked', !open);
+  if (open) dropSnap(); else snapSoon();
 }
 document.addEventListener('toggle', syncPreviewLock, true);
+/* ---------- the preview as one still picture ----------
+   Between changes the preview is shown as a single image drawn from the live preview, pixel for
+   pixel at the screen's real resolution. Scaling a picture moves text, icons and labels together,
+   so the hover lift can grow everything by exactly the same amount with no text snapping or label
+   shimmer. Any change re-renders the live preview and takes a fresh picture. While a section is
+   open for editing, the live preview stays (dragging works) and the box doesn't lift. */
+let SNAP_T = 0, SNAP_V = 0;
+function dropSnap() { SNAP_V++; const fl = $('fl'); if (!fl) return; fl.classList.remove('snap'); fl.querySelectorAll('.fl-snap').forEach(c => c.remove()); }
+function snapSoon() { clearTimeout(SNAP_T); dropSnap(); SNAP_T = setTimeout(takeSnap, 90); }
+addEventListener('resize', () => snapSoon());
+const svgImg = svg => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg)); });
+async function takeSnap() {
+  const fl = $('fl'); if (!fl || !fl.classList.contains('locked') || !fl.childElementCount) return;
+  const v = ++SNAP_V;
+  try { await document.fonts.ready; } catch (e) { }
+  await Promise.all([...fl.querySelectorAll('img')].map(i => i.decode ? i.decode().catch(() => { }) : null));
+  if (v !== SNAP_V || !fl.classList.contains('locked')) return;
+  // everything is drawn straight at final screen pixels (k = page zoom x display scale), the way the
+  // browser draws the live preview, so glyphs and images rasterize the same way
+  const Z = window.DKD_ZOOM || 1, dpr = window.devicePixelRatio || 1, k = Z * dpr;
+  const W = fl.offsetWidth, H = fl.offsetHeight, R = fl.getBoundingClientRect();
+  const cv = document.createElement('canvas'); cv.className = 'fl-snap';
+  cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  const g = cv.getContext('2d', { alpha: false }); // opaque: lets Windows use the same ClearType text smoothing as the live text
+  const cs = getComputedStyle(fl); g.fillStyle = cs.backgroundColor; g.fillRect(0, 0, cv.width, cv.height);
+  g.imageSmoothingEnabled = !fl.classList.contains('zoom'); g.imageSmoothingQuality = 'high';
+  const dev = r => ({ x: (r.left - R.left) * k, y: (r.top - R.top) * k, w: r.width * k, h: r.height * k });
+  const svgs = [...fl.querySelectorAll('svg')], icons = await Promise.all(svgs.map(svgImg));
+  if (v !== SNAP_V) return;
+  svgs.forEach((sv, i) => { if (icons[i]) { const r = dev(sv.getBoundingClientRect()); g.drawImage(icons[i], r.x, r.y, r.w, r.h); } });
+  fl.querySelectorAll('img').forEach(im => { const r = dev(im.getBoundingClientRect()); if (r.w && r.h) g.drawImage(im, r.x, r.y, r.w, r.h); });
+  const walker = document.createTreeWalker(fl, NodeFilter.SHOW_TEXT);
+  for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+    const txt = t.textContent; if (!txt.trim()) continue;
+    const pe = t.parentElement, st = getComputedStyle(pe), range = document.createRange(); range.selectNodeContents(t);
+    const rr = range.getBoundingClientRect(); // ranges report on-screen pixels
+    const x = (rr.left / Z - R.left) * k, y = (rr.top / Z - R.top) * k, h = rr.height / Z * k;
+    g.font = `${st.fontStyle} ${st.fontWeight} ${parseFloat(st.fontSize) * k}px ${st.fontFamily}`;
+    g.fillStyle = st.color; g.textBaseline = 'alphabetic';
+    const m = g.measureText(txt), asc = m.fontBoundingBoxAscent, desc = m.fontBoundingBoxDescent;
+    g.fillText(txt, x, Math.round(y + (h - (asc + desc)) / 2 + asc));
+  }
+  if (v !== SNAP_V || !fl.classList.contains('locked')) return;
+  fl.querySelectorAll('.fl-snap').forEach(c => c.remove());
+  fl.appendChild(cv); fl.classList.add('snap');
+}
 async function renderPreview() {
   const my = ++ver; save(); if (!PREVIEW) histSoon();
   $('sizeVal').textContent = S.size + ' px';
@@ -1845,7 +1893,7 @@ async function renderPreview() {
   $('summary').textContent = `${S.cats.length} folder${S.cats.length === 1 ? '' : 's'} · ${placed.length} sample${placed.length === 1 ? '' : 's'}` + (bytes ? ` · ${fmtBytes(bytes)}` : '') + (un ? ` · ${un} unsorted` : '') + (FILES.length ? '' : ' — drop samples anywhere to start');
   const names = S.cats.map((c, i) => catFolder(c, i).toLowerCase()), dup = names.find((n, i) => names.indexOf(n) !== i);
   if (dup) setStatus(`Two folders are named "${dup}". Rename one so they don't merge.`, 'err');
-
+  snapSoon();
 }
 
 /* ---------- drag a folder by its handle to reorder ----------
@@ -2021,7 +2069,10 @@ const eachSel = fn => { let n = 0; S.cats.forEach(c => { if (selectedCats.has(c.
     else { $('bulkIconNum').hidden = true; if (bi.value !== '') eachSel(c => { c.icon = bi.value; }); }
   };
   $('bulkIconNum').addEventListener('input', () => { const v = $('bulkIconNum').value || 'none'; eachSel(c => { c.icon = v; }); });
-  $('bulkColor').addEventListener('input', () => { const v = $('bulkColor').value; $('bulkColorOn').checked = true; eachSel(c => { c.color = v; c.colorOn = true; }); });
+  // coloring folders from here recolors their labels too: a folder's own saved label color would
+  // otherwise keep its label the old color while the name changes
+  const followName = c => { if (c.ls && 'color' in c.ls) delete c.ls.color; };
+  $('bulkColor').addEventListener('input', () => { const v = $('bulkColor').value; $('bulkColorOn').checked = true; eachSel(c => { c.color = v; c.colorOn = true; followName(c); }); });
   $('bulkColorOn').addEventListener('change', () => { const on = $('bulkColorOn').checked; eachSel(c => { c.colorOn = on; }); });
   // Gradient: top color on the first selected folder, bottom on the last,
   // every folder between blended step by step.
@@ -2032,7 +2083,7 @@ const eachSel = fn => { let n = 0; S.cats.forEach(c => { if (selectedCats.has(c.
   const applyGradient = () => {
     const A = $('bulkGradA').value, B = $('bulkGradB').value;
     const sel = S.cats.filter(c => selectedCats.has(c.id));
-    sel.forEach((c, i) => { c.color = sel.length === 1 ? A : lerpHex(A, B, i / (sel.length - 1)); c.colorOn = true; });
+    sel.forEach((c, i) => { c.color = sel.length === 1 ? A : lerpHex(A, B, i / (sel.length - 1)); c.colorOn = true; followName(c); });
     if (sel.length) { $('bulkColorOn').checked = true; renderCats(); schedule(); }
   };
   $('bulkGradA').addEventListener('input', applyGradient);
@@ -2237,7 +2288,7 @@ const tplPut = rec => tplReq('readwrite', st => st.put(rec));
 const tplDel = id => tplReq('readwrite', st => st.delete(id));
 const tplDlg = $('tplDlg'), tplBody = $('tplBody');
 let tplFrom = null;
-function tplShow(title) { $('tplClose').textContent = title === 'Save template' ? 'Cancel' : 'Close'; tplFrom = document.activeElement; $('tplTitle').textContent = title; tplBody.innerHTML = ''; tplDlg.classList.remove('closing'); tplDlg.hidden = false; }
+function tplShow(title) { $('tplImport').hidden = title !== 'Open template'; $('tplClose').textContent = title === 'Save template' ? 'Cancel' : 'Close'; tplFrom = document.activeElement; $('tplTitle').textContent = title; tplBody.innerHTML = ''; tplDlg.classList.remove('closing'); tplDlg.hidden = false; }
 function tplHide() { hideModal(tplDlg); if (tplFrom && tplFrom.isConnected && tplFrom.focus) tplFrom.focus(); tplFrom = null; }
 $('tplClose').onclick = tplHide;
 tplDlg.addEventListener('pointerdown', e => { if (e.target === tplDlg) tplHide(); });
@@ -2281,8 +2332,29 @@ async function openTemplateList() {
     });
     tplBody.append(ul);
   };
+  TPL_REDRAW = draw;
   await draw();
 }
+/* ---------- add a template from a .json file (one downloaded from this program) ---------- */
+let TPL_REDRAW = null;
+async function importTemplateFiles(files) {
+  const have = await tplAll(); let added = 0, bad = 0, last = '';
+  for (const f of files) {
+    let t = null;
+    try { t = JSON.parse(await f.text()); } catch (e) { }
+    if (!t || !t.state || !Array.isArray(t.state.cats)) { bad++; continue; }
+    const base = f.name.replace(/\.json$/i, '').replace(/[_]+/g, ' ').trim() || 'Template';
+    let name = base, n = 2;
+    while (have.some(r => r.name.toLowerCase() === name.toLowerCase())) name = `${base} (${n++})`;
+    const now = Date.now();
+    const rec = { id: 't' + now.toString(36) + Math.random().toString(36).slice(2, 6), name, created: now, updated: now, count: t.state.cats.length, data: t };
+    await tplPut(rec); have.push(rec); added++; last = name;
+  }
+  if (TPL_REDRAW && !tplDlg.hidden) await TPL_REDRAW();
+  if (added) setStatus(added === 1 ? `Added \u201c${last}\u201d to your templates.` + (bad ? ` ${bad} file${bad > 1 ? 's' : ''} weren't templates.` : '') : `Added ${added} templates.` + (bad ? ` ${bad} file${bad > 1 ? 's' : ''} weren't templates.` : ''), 'ok');
+  else if (bad) setStatus(bad === 1 ? "That file isn't a Drum Kit Designer template." : "Those files aren't Drum Kit Designer templates.", 'err');
+}
+$('tplFile').onchange = () => { const fs = [...$('tplFile').files]; $('tplFile').value = ''; if (fs.length) importTemplateFiles(fs); };
 async function applyTemplate(t) {
   if (!t || !t.state) return false;
   for (const r of t.bgimgs || []) if (!BGIMGS.some(x => x.id === r.id)) { BGIMGS.push(r); bgDBPut(r); }
@@ -2556,6 +2628,13 @@ document.addEventListener('click', e => {
   inp.addEventListener('blur', () => close(true));
 });
 
+/* film grain switch (next to the theme picker); remembered between visits */
+{
+  const b = $('grainBtn'), root = document.documentElement;
+  const sync = () => { const on = !root.classList.contains('no-grain'); b.setAttribute('aria-pressed', on); b.querySelector('b').textContent = on ? 'On' : 'Off'; };
+  b.onclick = () => { root.classList.toggle('no-grain'); try { localStorage.setItem('dkb-grain', root.classList.contains('no-grain') ? 'off' : 'on'); } catch (e) { } sync(); };
+  sync();
+}
 /* themes: the program's own look. Hovering one previews it. */
 {
   const THEMES = [['umber', 'Umber'], ['midnight', 'Midnight'], ['dark', 'Dark'], ['oxblood', 'Oxblood'], ['dusk', 'Dusk'], ['moss', 'Moss'], ['slate', 'Slate']];

@@ -5,14 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>Drum Kit Designer</title>
-<link rel="icon" type="image/png" href="app-icon.png"><rect width='100' height='100' rx='24' fill='%2319181E'/><ellipse cx='50' cy='40' rx='28' ry='11' fill='none' stroke='%23C9998F' stroke-width='6'/><path d='M22 40v22c0 6 12.5 11 28 11s28-5 28-11V40' fill='none' stroke='%23C9998F' stroke-width='6' stroke-linecap='round'/></svg>">
+<link rel="icon" type="image/png" href="app-icon.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Black+Ops+One&family=Bungee&family=Permanent+Marker&family=Press+Start+2P&family=Russo+One&family=Rubik+Mono+One&display=swap">
 <link rel="stylesheet" href="styles.css">
 <script>try{var t=localStorage.getItem("dkb-theme");document.documentElement.dataset.theme=/^(umber|midnight|dark|oxblood|dusk|moss|slate)$/.test(t)?t:"oxblood"}catch(e){document.documentElement.dataset.theme="oxblood"}</script>
+<script>try{if(localStorage.getItem("dkb-grain")==="off")document.documentElement.classList.add("no-grain")}catch(e){}</script>
 <script src="scale.js"></script>
 </head>
 <body>
-<header class="topbar"><span class="appname">Drum Kit Designer <span class="by">By <a href="https://www.instagram.com/willyswaggedout/" target="_blank" rel="noopener noreferrer">@Willyswaggedout</a></span></span><div class="top-r"><span class="savestate" id="saveState" role="status" aria-live="polite"></span><div class="theme" id="themeHost"></div></div></header>
+<header class="topbar"><span class="appname">Drum Kit Designer <span class="by">By <a href="https://www.instagram.com/willyswaggedout/" target="_blank" rel="noopener noreferrer">@Willyswaggedout</a></span></span><div class="top-r"><span class="savestate" id="saveState" role="status" aria-live="polite"></span><button type="button" class="grain-btn" id="grainBtn" aria-pressed="true" title="Film grain on the background">Grain <b>On</b></button><div class="theme" id="themeHost"></div></div></header>
 <main>
   <aside class="fonts-panel" aria-label="Export and selection">
     <div class="actions">
@@ -194,7 +195,7 @@
   <div class="modal-card tpl-card">
     <h2 id="tplTitle"></h2>
     <div id="tplBody" class="stack"></div>
-    <div class="inline" style="justify-content:flex-end"><button type="button" class="btn" id="tplClose">Close</button></div>
+    <div class="inline tpl-foot"><label class="btn" id="tplImport" for="tplFile" hidden>Add from file&hellip;</label><input type="file" id="tplFile" accept=".json,application/json" multiple class="vh"><button type="button" class="btn" id="tplClose">Close</button></div>
   </div>
 </div>
 <div id="confirmDlg" class="modal" hidden role="alertdialog" aria-modal="true" aria-labelledby="confTitle">
