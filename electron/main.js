@@ -10,7 +10,7 @@ function createWindow() {
     minWidth: 420,
     minHeight: 500,
     backgroundColor: '#161618',
-    title: 'Drum Kit Builder',
+    title: 'Drum Kit Designer',
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

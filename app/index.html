@@ -3,50 +3,126 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark light">
-<title>Drum Kit Builder</title>
+<meta name="color-scheme" content="dark">
+<title>Drum Kit Designer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%2319181E'/><ellipse cx='50' cy='40' rx='28' ry='11' fill='none' stroke='%23C9998F' stroke-width='6'/><path d='M22 40v22c0 6 12.5 11 28 11s28-5 28-11V40' fill='none' stroke='%23C9998F' stroke-width='6' stroke-linecap='round'/></svg>">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Black+Ops+One&family=Bungee&family=Permanent+Marker&family=Press+Start+2P&family=Russo+One&family=Rubik+Mono+One&display=swap">
 <link rel="stylesheet" href="styles.css">
+<script>try{var t=localStorage.getItem("dkb-theme");document.documentElement.dataset.theme=/^(umber|midnight|dark|oxblood|dusk|moss|slate)$/.test(t)?t:"oxblood"}catch(e){document.documentElement.dataset.theme="oxblood"}</script>
 </head>
 <body>
+<header class="topbar"><span class="appname">Drum Kit Designer <span class="by">By <a href="https://www.instagram.com/willyswaggedout/" target="_blank" rel="noopener noreferrer">@Willyswaggedout</a></span></span><div class="top-r"><span class="savestate" id="saveState" role="status" aria-live="polite"></span><div class="theme" id="themeHost"></div></div></header>
 <main>
+  <aside class="fonts-panel" aria-label="Custom fonts and selection">
+    <h2>Fonts</h2>
+    <label class="font-drop" for="addFonts"><span>Add custom fonts</span><span class="note">Drop .ttf, .otf or .woff files here</span></label>
+    <input type="file" id="addFonts" accept=".ttf,.otf,.woff,.woff2" multiple class="vh">
+    <div id="fontLibrary" hidden>
+    <button type="button" class="fav-only" id="favOnly" aria-pressed="false"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M12 2.8l2.8 6 6.5.7-4.8 4.5 1.3 6.5L12 17.2 6.2 20.5l1.3-6.5L2.7 9.5l6.5-.7z" stroke-linejoin="round"/></svg>Favorites only</button>
+    <ul id="fontList" class="font-list"></ul>
+    <div id="fontSel" class="font-sel" hidden>
+      <span id="fontSelCount">0 fonts selected</span>
+      <div class="inline"><button type="button" class="link" id="fontClear">Clear selection</button><button type="button" class="link danger" id="fontDelete">Delete selected fonts</button></div>
+    </div>
+    </div>
+    <section id="bulkPanel" class="bulk" hidden aria-label="Edit selected folders">
+      <h2 id="bulkCount">0 selected</h2>
+      <div class="stack">
+        <input type="text" id="bulkName" placeholder="Rename all&hellip;" aria-label="Rename selected folders">
+        <div class="inline"><span class="note">Icon</span><select id="bulkIcon" aria-label="Icon for selected folders"></select><input type="number" id="bulkIconNum" min="0" max="200" class="num" hidden aria-label="Icon number"></div>
+        <div class="inline"><label class="check"><input type="checkbox" id="bulkColorOn"> Name color</label><input type="color" id="bulkColor" value="#FFFFFF" aria-label="Color for selected folders"></div>
+        <div class="inline"><span class="note">Gradient (first &#8594; last folder)</span></div>
+        <div class="inline"><input type="color" id="bulkGradA" value="#FF3B30" aria-label="Gradient top color"><span class="note" aria-hidden="true">&#8594;</span><input type="color" id="bulkGradB" value="#2979FF" aria-label="Gradient bottom color"></div>
+        <div class="stack" id="bulkImg" hidden>
+          <span class="note">Label images</span>
+          <select id="bulkFit" class="compact" aria-label="Fit label size for selected folders"></select>
+          <div class="seg small" role="group" aria-label="Label image size" id="bulkImgSeg"><button type="button" data-v="original">Original size</button><button type="button" data-v="custom">Custom</button></div>
+        </div>
+        <div class="stack" id="bulkGen" hidden>
+          <span class="note" id="bulkGenTitle">Generated labels</span>
+          <div class="fp" id="bulkFontHost"></div>
+          <div class="inline"><span class="note">Size</span><input type="range" id="bulkSize" min="9" max="100" step="1" aria-label="Label size for selected folders"><span class="note" id="bulkSizeVal"></span></div>
+          <div class="inline"><span class="note">Outline</span><input type="range" id="bulkOutline" min="0" max="3" step="0.5" aria-label="Label outline for selected folders"><span class="note" id="bulkOutlineVal"></span></div>
+          <div class="inline"><span class="note">Outline color</span><input type="color" id="bulkOutlineColor" value="#000000" aria-label="Label outline color for selected folders"></div>
+          <div class="inline"><span class="note">Shadow</span><input type="range" id="bulkShadow" min="0" max="6" step="0.5" aria-label="Label drop shadow for selected folders"><span class="note" id="bulkShadowVal"></span></div>
+        </div>
+        <button type="button" class="link" id="bulkClear">Clear selection</button>
+        <button type="button" class="link danger" id="bulkDelete">Delete selected folders</button>
+      </div>
+    </section>
+  </aside>
   <div class="editor">
 
     <!-- Kit -->
     <section class="group" aria-label="Kit">
-      <div class="field-row">
-        <label for="kitName">Kit name</label>
-        <input type="text" id="kitName" placeholder="My Drum Kit" autocomplete="off">
-      </div>
-      <div class="field-row">
-        <label for="tip">Your tag</label>
-        <input type="text" id="tip" placeholder="@yourname" autocomplete="off">
-      </div>
+      <details class="disclosure" id="kitSec">
+        <summary><span>Kit name</span><span class="value" id="kitValue"></span></summary>
+        <div class="panel">
+          <div class="field-row"><label for="kitName">Name</label><input type="text" id="kitName" placeholder="My Drum Kit" autocomplete="off"></div>
+          <div id="kitTextOpts" class="stack">
+            <div class="field-row"><label for="bannerFont">Font</label><select id="bannerFont"></select></div>
+            <div class="field-row"><label for="kitInk">Text color</label><input type="color" id="kitInk" aria-label="Kit name text color"></div>
+            <div class="field-row"><label for="kitOutline">Outline</label><div class="inline grow"><input type="range" id="kitOutline" min="0" max="6" step="0.5"><input type="color" id="kitOutlineColor" aria-label="Kit name outline color"><span class="note" id="kitOutlineVal"></span></div></div>
+            <label class="check"><input type="checkbox" id="kitShadow"> Drop shadow</label>
+            <div class="field-row"><label for="kitSize">Size</label><div class="inline grow"><input type="range" id="kitSize" min="8" max="60" step="1"><span class="note" id="kitSizeVal"></span></div></div>
+            <button type="button" class="link" id="kitReset">Reset position &amp; size</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="disclosure" id="tagSec">
+        <summary><span>Your @</span><span class="value" id="tagValue"></span></summary>
+        <div class="panel">
+          <div class="field-row"><label for="tip">Your @</label><input type="text" id="tip" placeholder="@yourname" autocomplete="off"></div>
+          <div id="tagTextOpts" class="stack">
+            <div class="field-row"><label for="tagFont">Font</label><select id="tagFont"></select></div>
+            <div class="field-row"><label for="tagInk">Text color</label><input type="color" id="tagInk" aria-label="Your @ text color"></div>
+            <div class="field-row"><label for="tagOutline">Outline</label><div class="inline grow"><input type="range" id="tagOutline" min="0" max="6" step="0.5"><input type="color" id="tagOutlineColor" aria-label="Your @ outline color"><span class="note" id="tagOutlineVal"></span></div></div>
+            <label class="check"><input type="checkbox" id="tagShadow"> Drop shadow</label>
+            <div class="field-row"><label for="tagSize">Size</label><div class="inline grow"><input type="range" id="tagSize" min="6" max="40" step="1"><span class="note" id="tagSizeVal"></span></div></div>
+            <button type="button" class="link" id="tagReset">Reset position &amp; size</button>
+          </div>
+        </div>
+      </details>
 
       <details class="disclosure" id="bannerSec">
         <summary><span>Banner</span><span class="value" id="bannerValue"></span></summary>
         <div class="panel">
-          <div class="seg" role="group" aria-label="Banner type" id="bannerMode">
-            <button type="button" data-v="text">Text</button><button type="button" data-v="image">Image</button><button type="button" data-v="none">None</button>
+          <div class="seg" role="group" aria-label="Banner background" id="bannerBgSeg">
+            <button type="button" data-v="none">None</button><button type="button" data-v="image">Custom image</button><button type="button" data-v="color">Custom color</button>
           </div>
+          <div class="field-row" id="bgColorRow" hidden><label for="bannerBg">Color</label><div class="inline grow"><input type="color" id="bannerBg" aria-label="Banner color"></div></div>
+          <div id="bgImgRow" class="stack" hidden>
+              <div class="bg-thumbs" id="bgThumbs"></div>
+              <div class="inline"><label class="btn" for="addBgImg">Add background image&hellip;</label><input type="file" id="addBgImg" accept="image/*" class="vh"></div>
+              <div class="inline bg-scale" id="bgPosRow" hidden>
+                <span class="note">Size</span><input type="range" id="bgScale" min="10" max="400" step="1" value="100" aria-label="Background image size"><output id="bgScaleVal">100%</output>
+                <button type="button" class="link" id="bgReset">Reset</button>
+              </div>
+            </div>
+          <div hidden aria-hidden="true">
+            <div id="bannerMode"></div>
           <div id="bannerImageOpts" class="stack">
             <div class="inline">
               <label class="btn" for="bannerFile">Choose image…</label><input type="file" id="bannerFile" accept="image/*" class="vh">
-              <label class="check"><input type="checkbox" id="bannerFit"> Resize to <input type="number" id="bannerW" min="80" max="800" class="num"> px wide</label>
+              <button type="button" class="link danger" id="bannerRemove" hidden>Remove image</button>
             </div>
-            <p class="note">FL shows images at actual size. About 250 px wide fits the browser panel.</p>
-          </div>
-          <div id="bannerTextOpts" class="stack">
-            <div class="field-row"><label for="bannerSub">Subtitle</label><input type="text" id="bannerSub" placeholder="Uses your tag"></div>
-            <div class="inline">
-              <label class="swatch"><input type="color" id="bannerBg"> Background</label>
-              <label class="swatch"><input type="color" id="bannerInk"> Text</label>
+            <div id="bannerSizeOpts" class="stack" hidden>
+              <div class="seg" role="group" aria-label="Image size" id="bannerSizeSeg">
+                <button type="button" data-v="original">Original size</button><button type="button" data-v="auto">Fit banner (250&times;63)</button><button type="button" data-v="crop">Crop</button>
+              </div>
+              <div id="cropBox" class="stack" hidden>
+                <div class="inline"><span class="note">Size</span><input type="number" id="cropW" class="num" min="10" aria-label="Crop width"> &times; <input type="number" id="cropH" class="num" min="10" aria-label="Crop height"> px</div>
+                <div id="cropStage"><img id="cropImg" alt="Image to crop"><div id="cropRect"><span id="cropDims"></span><div id="cropHandle" aria-hidden="true"></div></div></div>
+                <p class="note">Drag the box to move it. Drag the orange corner to resize.</p>
+              </div>
             </div>
+            <p class="note">FL shows images at their actual size. About 250 px wide fits the browser panel.</p>
           </div>
-          <div class="inline">
-            <span class="note">Kit folder icon</span><select id="kitIcon" class="compact"></select>
-            <label class="check"><input type="checkbox" id="kitColorOn"> Name color</label><input type="color" id="kitColor" aria-label="Kit name color">
+            <div id="bannerTextOpts"><input type="text" id="bannerSub"><select id="bgMode"><option value="none"></option><option value="color"></option><option value="image"></option></select></div>
           </div>
+          <div class="field-row"><label for="kitIcon">Kit folder icon</label><select id="kitIcon" class="compact"></select></div>
+          <div class="field-row"><label for="kitColorOn">Name color</label><div class="inline grow"><label class="check"><input type="checkbox" id="kitColorOn"><span class="vh">Use a name color</span></label><input type="color" id="kitColor" aria-label="Kit name color"></div></div>
         </div>
       </details>
 
@@ -54,21 +130,19 @@
         <summary><span>Label style</span><span class="value" id="styleValue"></span></summary>
         <div class="panel">
           <div class="field-row"><label for="font">Font</label><select id="font"></select></div>
-          <div class="field-row"><label for="size">Size</label><div class="inline grow"><input type="range" id="size" min="9" max="20" step="1"><span class="note" id="sizeVal"></span></div></div>
-          <div class="inline">
-            <label class="swatch"><input type="color" id="labelColor"> Text</label>
-            <label class="check"><input type="checkbox" id="matchColor"> Match each folder's color</label>
-          </div>
+          <div class="field-row"><label for="size">Size</label><div class="inline grow"><input type="range" id="size" min="9" max="100" step="1"><span class="note" id="sizeVal"></span></div></div>
+          <div class="field-row"><label for="labelColor">Text color</label><div class="inline grow"><input type="color" id="labelColor" aria-label="Label text color"><label class="check match-right"><input type="checkbox" id="matchColor"> Match each folder's color</label></div></div>
           <div class="field-row"><label for="outline">Outline</label><div class="inline grow"><input type="range" id="outline" min="0" max="3" step="0.5"><input type="color" id="outlineColor" aria-label="Outline color"><span class="note" id="outlineVal"></span></div></div>
-          <label class="check"><input type="checkbox" id="shadow"> Drop shadow</label>
+          <div class="field-row"><label for="shadow">Drop shadow</label><div class="inline grow"><input type="range" id="shadow" min="0" max="6" step="0.5"><span class="note" id="shadowVal"></span></div></div>
           <details class="sub">
             <summary>Advanced</summary>
             <div class="stack">
-              <div class="field-row"><label>Label image size</label><div class="inline"><input type="number" id="lw" min="60" max="600" class="num" aria-label="Width"> × <input type="number" id="lh" min="12" max="80" class="num" aria-label="Height"> px</div></div>
+              <div class="field-row"><label>Label image size</label><div class="inline"><input type="number" id="lw" min="60" max="600" class="num" aria-label="Width"> × <input type="number" id="lh" min="12" max="120" class="num" aria-label="Height"> px</div></div>
               <div class="field-row"><label for="heightOfs">Row spacing</label><input type="number" id="heightOfs" min="0" max="40" class="num"></div>
               <div class="field-row"><label for="colorOrder">Color format</label><select id="colorOrder"><option value="bgr">FL ($BBGGRR)</option><option value="rgb">Plain hex ($RRGGBB)</option></select></div>
               <label class="check"><input type="checkbox" id="numbering"> Number folders (1 808s, 2 Claps…)</label>
               <label class="check"><input type="checkbox" id="sortGroup"> Lock folder order (SortGroup)</label>
+              <label class="check"><input type="checkbox" id="hideImgs"> Hide the image folders in FL (zimages)</label>
             </div>
           </details>
         </div>
@@ -78,34 +152,57 @@
     <!-- Folders -->
     <div class="group-head">
       <h2>Folders</h2>
-      <label class="link" for="addFiles">Add samples</label><input type="file" id="addFiles" multiple class="vh">
     </div>
     <div id="unsorted"></div>
     <section class="group folders" id="cats" aria-label="Folders"></section>
     <div class="add-row">
-      <button type="button" class="plus" id="addCat" aria-label="Add folder" title="Add folder">+</button>
+      <button type="button" class="plus" id="addCat" aria-label="Add folder" title="Add folder"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      <button type="button" class="plus" id="dupCat" aria-label="Duplicate last folder" title="Duplicate last folder"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 3.5v-1h-8v8h1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
     </div>
-    <p class="note center">Drag samples or folders onto the page. They're sorted by name, and missing folders are made for you.</p>
   </div>
 
   <aside class="side" aria-label="Preview and export">
     <div class="preview-head">
       <h2>Preview</h2>
-      <div class="seg small" role="group" aria-label="Preview zoom" id="zoom"><button type="button" data-v="1">1×</button><button type="button" data-v="2">2×</button></div>
+      <div class="seg small" role="group" aria-label="Preview zoom" id="zoom"><button type="button" data-v="1">1×</button><button type="button" data-v="1.5">1.5×</button><button type="button" data-v="2">2×</button></div>
     </div>
     <div class="fl" id="fl"></div>
     <p class="note" id="summary"></p>
     <button type="button" class="btn primary wide" id="dlZip">Download Kit</button>
     <button type="button" class="link" id="writeDir" hidden>Save into a folder…</button>
+    <div class="tpl"><button type="button" class="link" id="tplExport">Export template</button><button type="button" class="link" id="tplOpen">Open template&hellip;</button><button type="button" class="link tpl-wide" id="tplReset">Start over</button></div>
     <div class="status" id="status" role="status" aria-live="polite"></div>
-    <details class="sub">
-      <summary>What gets created</summary>
-      <p class="note">Unzip into <b>FL Studio/Data/Patches</b>, then refresh FL's browser.</p>
-      <pre class="tree" id="tree"></pre>
-    </details>
   </aside>
 </main>
-<div id="dropveil" aria-hidden="true"><div>Drop to add samples</div></div>
+<div id="askDrop" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="askTitle">
+  <div class="modal-card">
+    <h2 id="askTitle">Did you mean to drop this here?</h2>
+    <p class="note" id="askText"></p>
+    <ul class="note" id="askList"></ul>
+    <div class="inline" style="justify-content:flex-end">
+      <button type="button" class="btn" id="askNo">Don't add</button>
+      <button type="button" class="btn primary" id="askYes" style="min-height:32px;width:auto;margin:0;padding:6px 16px">Add anyway</button>
+    </div>
+  </div>
+</div>
+<div id="tplDlg" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="tplTitle">
+  <div class="modal-card tpl-card">
+    <h2 id="tplTitle"></h2>
+    <div id="tplBody" class="stack"></div>
+    <div class="inline" style="justify-content:flex-end"><button type="button" class="btn" id="tplClose">Close</button></div>
+  </div>
+</div>
+<div id="confirmDlg" class="modal" hidden role="alertdialog" aria-modal="true" aria-labelledby="confTitle">
+  <div class="modal-card">
+    <h2 id="confTitle"></h2>
+    <p class="note" id="confText"></p>
+    <div class="inline" style="justify-content:flex-end">
+      <button type="button" class="btn" id="confNo">Cancel</button>
+      <button type="button" class="btn danger-btn" id="confYes">Delete</button>
+    </div>
+  </div>
+</div>
+<script src="template.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

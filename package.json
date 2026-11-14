@@ -1,8 +1,8 @@
 {
   "name": "drum-kit-builder",
-  "productName": "Drum Kit Builder",
-  "version": "0.1.0",
-  "description": "Build custom FL Studio drum kits: folders, .nfo files, label images and banners.",
+  "productName": "Drum Kit Designer",
+  "version": "1.0.0",
+  "description": "Build custom FL Studio drum kits: folders, .nfo files, label images and banners. By @Willyswaggedout.",
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
@@ -16,7 +16,7 @@
   },
   "build": {
     "appId": "com.drumkitbuilder.app",
-    "productName": "Drum Kit Builder",
+    "productName": "Drum Kit Designer",
     "files": [
       "app/**/*",
       "electron/**/*",
@@ -29,13 +29,15 @@
       "target": [
         "nsis",
         "portable"
-      ]
+      ],
+      "icon": "build/icon.ico"
     },
     "mac": {
       "target": [
         "dmg"
       ],
-      "category": "public.app-category.music"
+      "category": "public.app-category.music",
+      "icon": "build/icon.png"
     },
     "publish": null
   }
