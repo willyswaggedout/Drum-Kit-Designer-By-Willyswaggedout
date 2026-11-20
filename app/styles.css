@@ -25,7 +25,7 @@
   --accent:#F0A43A; --accent-ink:#1A1A1A; --danger:#FF7B6E; --ok:#6FD38A;
   --field:#2A2A2E;
   --r:0; --r-xs:0; --r-sm:0;
-  --fl-bg:#2A2C33; --fl-row:#C7CBD1;
+  --fl-bg:#1E1F21; --fl-row:#C7CBD1;
 }
 :root{color-scheme:dark}
 :root[data-theme=midnight]{--bg:#0D1220;--surface:#141B2E;--surface2:#1E2842;--sep:rgba(160,190,255,.12);--text:#E8EEFF;--text2:#93A0BD;--text3:#5F6D8C;--accent:#5AA9FF;--accent-ink:#04101F;--field:#1E2842}
@@ -203,8 +203,8 @@ details.disclosure[open]::details-content,details.sub[open]::details-content{blo
 @media (prefers-reduced-motion:no-preference){.folder-more{animation:panein .16s ease-out}@keyframes panein{from{opacity:0;transform:translateY(-3px)}}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}details.disclosure::details-content,details.sub::details-content{transition:none!important}}
 /* folder-row icons follow the theme (preview keeps FL's colors) */
-.folder-row .ico [fill]:not([fill="#2A2C33"]):not([fill="none"]){fill:var(--text2)}
-.folder-row .ico [stroke]:not([stroke="#2A2C33"]){stroke:var(--text2)}
+.folder-row .ico [fill]:not([fill="#1E1F21"]):not([fill="none"]){fill:var(--text2)}
+.folder-row .ico [stroke]:not([stroke="#1E1F21"]){stroke:var(--text2)}
 
 /* sample rows: hover highlight + drag to reorder */
 ul.flist.sortable{padding:2px 0}

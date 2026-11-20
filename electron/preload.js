@@ -5,3 +5,6 @@ contextBridge.exposeInMainWorld('DKD_UPDATER', {
   onStatus: cb => ipcRenderer.on('dkd-update', (_e, s) => cb(s)),
   update: () => ipcRenderer.invoke('dkd-update-start')
 });
+contextBridge.exposeInMainWorld('DKD_WINDOW', {
+  setBackground: color => ipcRenderer.send('dkd-window-bg', String(color))
+});

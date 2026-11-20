@@ -104,7 +104,9 @@ void main(){
     raf = requestAnimationFrame(frame);
     if (document.hidden || window.DKD_BG_HOLD) return; // held briefly while the preview picture is made
     const theming = root.classList.contains('theming');
-    if (!theming && now - last < 32) return; last = now; // ~30 fps is plenty for a slow drift
+    const Z = window.DKD_ZOOM || 1, dpr = window.devicePixelRatio || 1;
+    const resized = cv.width !== Math.max(1, Math.round(innerWidth * Z * dpr)) || cv.height !== Math.max(1, Math.round(innerHeight * Z * dpr));
+    if (!theming && !resized && now - last < 32) return; last = now; // a new window size is drawn at once // ~30 fps is plenty for a slow drift
     const [w, h, k] = size();
     gl.viewport(0, 0, w, h);
     // colors (with a short cross-fade when the theme changes)

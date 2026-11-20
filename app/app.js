@@ -118,7 +118,7 @@ function iconSVG(idx, z = 1, tint = '') {
   if (k === '7') return `<svg ${s(14, 14)} viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="9" width="2.4" height="4" fill="${T('#C7CBD1')}"/><rect x="5" y="6" width="2.4" height="7" fill="${T('#C7CBD1')}"/><rect x="9" y="2" width="2.4" height="11" fill="${T('#C7CBD1')}"/></svg>`;
   if (k === '52') return `<svg ${s(15, 15)} viewBox="0 0 24 24" aria-hidden="true"><path fill="${T('#AEB8D0')}" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 20.9l1.6-7L2 9.2l7.1-.6z"/></svg>`;
   if (k === '55') return `<svg ${s(16, 14)} viewBox="0 0 24 18" aria-hidden="true"><path fill="${T('#E6E8EB')}" d="M6 17h13a5 5 0 0 0 .6-9.96A7 7 0 0 0 6.2 6.1 5.5 5.5 0 0 0 6 17z"/></svg>`;
-  if (k === '34') return `<svg ${s(15, 14)} viewBox="0 0 15 14" aria-hidden="true"><rect x=".5" y=".5" width="14" height="13" fill="${T('#E6E8EB')}"/><rect x="3" y="1" width="2" height="7" fill="#2A2C33"/><rect x="7" y="1" width="2" height="7" fill="#2A2C33"/><rect x="11" y="1" width="2" height="7" fill="#2A2C33"/><path d="M5 8v5M10 8v5" stroke="#2A2C33"/></svg>`;
+  if (k === '34') return `<svg ${s(15, 14)} viewBox="0 0 15 14" aria-hidden="true"><rect x=".5" y=".5" width="14" height="13" fill="${T('#E6E8EB')}"/><rect x="3" y="1" width="2" height="7" fill="#1E1F21"/><rect x="7" y="1" width="2" height="7" fill="#1E1F21"/><rect x="11" y="1" width="2" height="7" fill="#1E1F21"/><path d="M5 8v5M10 8v5" stroke="#1E1F21"/></svg>`;
   const folder = `<svg ${s(15, 13)} viewBox="0 0 15 13" aria-hidden="true"><path fill="none" stroke="${T('#9CA3AD')}" d="M.5 2.5v9.5h14V3.5H7L5.5 1.5h-5z"/></svg>`;
   return k === 'none' ? folder : folder + `<span class="fl-badge">#${k}</span>`;
 }
@@ -1824,7 +1824,14 @@ document.addEventListener('toggle', syncPreviewLock, true);
 let SNAP_T = 0, SNAP_V = 0;
 function dropSnap() { SNAP_V++; const fl = $('fl'); if (!fl) return; fl.classList.remove('snap'); fl.querySelectorAll('.fl-snap').forEach(c => { if (c.src) URL.revokeObjectURL(c.src); c.remove(); }); }
 function snapSoon() { clearTimeout(SNAP_T); dropSnap(); if (PREVIEW) return; /* hovering through a list: picture comes after the choice */ SNAP_T = setTimeout(takeSnap, 90); }
-addEventListener('resize', () => snapSoon());
+// Resizing the window: the page rescales every frame (cheap), but the expensive work — redrawing the
+// preview's labels at the new sharpness and retaking its picture — waits until the resize settles,
+// so dragging the window edge stays smooth. Until then the current preview simply scales along.
+let RESIZE_T = 0;
+addEventListener('resize', () => {
+  clearTimeout(SNAP_T); clearTimeout(RESIZE_T);
+  RESIZE_T = setTimeout(() => { schedule(); snapSoon(); }, 160);
+});
 const svgImg = svg => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg)); });
 // the moving background holds still for the moment the picture takes, so the two don't compete
 async function takeSnap() { window.DKD_BG_HOLD = true; try { await makeSnap(); } finally { window.DKD_BG_HOLD = false; } }
@@ -2296,7 +2303,6 @@ function uiScroll() { if (UI_SCROLL && !UI_TOUCHED) window.scrollTo(0, UI_SCROLL
   }
 }
 syncSeg(); renderCats(); renderPreview(); histCommit(); if (selectedCats.size) updateBulkPanel(); syncPreviewLock();
-addEventListener('resize', () => schedule());
 
 
 /* ---------- starting template ----------
@@ -2620,7 +2626,7 @@ const syncAllSegs = () => document.querySelectorAll('.seg').forEach(segSync);
     });
   })).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-pressed', 'hidden'] });
   document.addEventListener('input', e => { const t = e.target; if (t && t.type === 'range') paintRange(t); }, true);
-  addEventListener('resize', syncAllSegs);
+  let segRaf = 0; addEventListener('resize', () => { if (!segRaf) segRaf = requestAnimationFrame(() => { segRaf = 0; syncAllSegs(); }); });
   document.addEventListener('toggle', e => { if (e.target && e.target.querySelectorAll) setTimeout(() => e.target.querySelectorAll('.seg').forEach(segSync), 260); }, true);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(syncAllSegs, 50));
 }
@@ -2689,11 +2695,16 @@ document.addEventListener('click', e => {
       const l = document.querySelector('link[rel=icon]'); if (l) l.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
     } catch (e) { }
   };
-  let sweepT;
+  let sweepT, winBgT;
+  // the desktop window's own background (what shows for an instant at a freshly widened edge while
+  // resizing) matches the theme, so no off-color bars appear
+  const setWinBg = () => { try { if (window.DKD_WINDOW) window.DKD_WINDOW.setBackground(getComputedStyle(root).getPropertyValue('--bg').trim()); } catch (e) { } };
+  setWinBg();
   const apply = v => {
     if (root.dataset.theme !== v) { root.classList.add('theming'); clearTimeout(sweepT); sweepT = setTimeout(() => root.classList.remove('theming'), 420); }
     root.dataset.theme = v;
     requestAnimationFrame(setFavicon);
+    clearTimeout(winBgT); winBgT = setTimeout(setWinBg, 450); // after the color glide
   };
   setFavicon();
   if (!THEMES.some(t => t[0] === root.dataset.theme)) apply('oxblood');

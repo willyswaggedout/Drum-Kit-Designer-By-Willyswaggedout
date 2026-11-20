@@ -63,6 +63,8 @@ let upd = { state: 'checking' };                      // checking | latest | ava
 let updater = null, asked = false, startDownload = () => shell.openExternal(RELEASES), install = () => { };
 const tell = patch => { upd = Object.assign({}, upd, patch); if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send('dkd-update', upd); };
 ipcMain.handle('dkd-update-status', () => upd);
+// the window's own background follows the app's theme, so a freshly widened edge isn't an off-color bar
+ipcMain.on('dkd-window-bg', (_e, c) => { try { if (mainWin && /^(#[0-9a-f]{3,8}|rgba?\([\d.,\s%]+\))$/i.test(c)) mainWin.setBackgroundColor(c); } catch (e) { } });
 ipcMain.handle('dkd-update-start', () => { if (upd.state === 'ready') install(); else if (upd.state === 'available' || upd.state === 'unknown') startDownload(); });
 
 function checkForUpdates() {
