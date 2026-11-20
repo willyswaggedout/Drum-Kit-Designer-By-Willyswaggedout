@@ -13,17 +13,19 @@ Build custom drum kits for FL Studio's browser: folders with colored names, icon
 
 Fill in the kit name and your tag, add folders with **+**, drag samples onto the page (they're sorted by name), then **Download Kit** and unzip it into `FL Studio/Data/Patches`. In Chrome, Edge or the desktop app, **Save into a folder…** writes the kit straight into Patches.
 
-## Build the downloadable apps
+## Build the Windows app and release an update
 
-- **On GitHub (recommended):** push a version tag and the workflow in `.github/workflows/build.yml` builds the Windows `.exe` and macOS `.dmg` and attaches them to a release.
-  ```bash
-  git tag v0.1.0
-  git push origin v0.1.0
-  ```
-  You can also run **Build apps** from the Actions tab to get the files without a release.
-- **On your own machine:** `npm run dist:win` (on Windows) or `npm run dist:mac` (on a Mac). Output goes to `dist/`.
+1. Raise `"version"` in `package.json` (for example `1.1.0` → `1.2.0`).
+2. Push to `main`, then push a matching tag:
+   ```bash
+   git tag v1.2.0
+   git push origin v1.2.0
+   ```
+3. The workflow in `.github/workflows/build.yml` builds `Drum-Kit-Designer-Setup-<version>.exe` and `Delete Drum Kit Designer.exe` and attaches them to a release, along with `latest.yml`.
 
-The macOS build isn't code-signed, so the first time people open it they right-click the app and choose **Open**.
+Every installed copy checks the newest release when it opens. If it's newer, the app asks **"A new version of Drum Kit Designer is available"** with **Update** / **Not Now**; Update downloads it, then restarts into the new version. The repository has to be public for the app to see its releases.
+
+The app isn't code-signed, so Windows may show "Windows protected your PC" on the first install (**More info → Run anyway**).
 
 ## How FL Studio kits work
 

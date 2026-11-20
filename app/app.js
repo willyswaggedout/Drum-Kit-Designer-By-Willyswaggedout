@@ -691,6 +691,27 @@ function fillFontOptions(sel, value) {
 }
 /* ---- font picker: hover a font and the preview shows it; click to keep it, Esc / click away to cancel ---- */
 const PICKERS = [];
+/* Hover previews in the pickers. Scrolling slides rows under a still mouse, and every row it passes
+   would otherwise redraw the whole preview in that font, piling up into long freezes. So: while the
+   list scrolls, rows are only highlighted; a row previews once the mouse actually moves onto it or
+   rests on it, and only after it stays there a moment, so sweeping past ten rows costs one redraw. */
+const HOVER_SETTLE = 120, SCROLL_QUIET = 220;
+function hoverPreviews(apply) {
+  let t = 0, lastScroll = 0, shown = null, want = null;
+  const go = id => { clearTimeout(t); want = id; t = setTimeout(() => { if (want !== shown) { shown = want; apply(want); } }, HOVER_SETTLE); };
+  return {
+    // a row came under the pointer: preview it unless that happened because the list scrolled
+    enter(id) { want = id; if (performance.now() - lastScroll < SCROLL_QUIET) return; /* the scroll-settle timer will show it */ go(id); },
+    // the mouse really moved over a row
+    move(id, e) { if (e && !e.movementX && !e.movementY) return; if (id !== shown) go(id); },
+    // keyboard choice: preview right away (still settled)
+    key(id) { go(id); },
+    // list scrolled: hold previews until it has been still for a moment, then show the row under the mouse
+    scrolled() { lastScroll = performance.now(); clearTimeout(t); t = setTimeout(() => { if (want != null && want !== shown) { shown = want; apply(want); } }, SCROLL_QUIET); },
+    cancel() { clearTimeout(t); },
+    reset() { clearTimeout(t); shown = want = null; lastScroll = 0; }
+  };
+}
 function fontPicker(host, { get, commit, temp, revert, label }) {
   const btn = el('button', { type: 'button', className: 'fp-btn' }); btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
   if (label) btn.setAttribute('aria-label', label);
@@ -698,15 +719,16 @@ function fontPicker(host, { get, commit, temp, revert, label }) {
   btn.append(txt, chev);
   let pop = null, io = null, rows = [], cur = -1, hoverT = 0, committed = false;
   const refresh = () => { const f = fontOf(get()); txt.textContent = (FAVS.has(f.id) ? '\u2605 ' : '') + f.label; };
-  const preview = id => { clearTimeout(hoverT); hoverT = setTimeout(() => { PREVIEW = true; temp(id); }, 40); };
+  const hv = hoverPreviews(id => { PREVIEW = true; temp(id); });
+  const preview = id => hv.key(id);
   const close = keep => {
     if (!pop) return;
-    clearTimeout(hoverT); pop.remove(); pop = null; if (io) io.disconnect();
+    hv.reset(); clearTimeout(hoverT); pop.remove(); pop = null; if (io) io.disconnect();
     removeEventListener('pointerdown', away, true); removeEventListener('keydown', key, true); removeEventListener('resize', onWin); removeEventListener('scroll', onWin, true);
     btn.setAttribute('aria-expanded', 'false');
     if (!keep) { if (PREVIEW) { revert(); PREVIEW = false; schedule(); } }
   };
-  const pick = id => { committed = true; clearTimeout(hoverT); PREVIEW = false; close(true); commit(id); refresh(); btn.focus(); };
+  const pick = id => { committed = true; hv.cancel(); clearTimeout(hoverT); PREVIEW = false; close(true); commit(id); refresh(); btn.focus(); };
   const away = e => { if (pop && !pop.contains(e.target) && !btn.contains(e.target)) close(false); };
   const onWin = e => { if (pop && !(e && e.target && pop.contains(e.target))) close(false); };
   const focusRow = i => {
@@ -723,6 +745,7 @@ function fontPicker(host, { get, commit, temp, revert, label }) {
   const open = () => {
     if (pop) { close(false); return; }
     pop = el('div', { className: 'fp-pop', role: 'listbox' }); pop.setAttribute('aria-label', 'Fonts');
+    pop.addEventListener('scroll', () => hv.scrolled(), { passive: true }); pop.addEventListener('wheel', () => hv.scrolled(), { passive: true });
     io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(en => {
       if (!en.isIntersecting) return; const sm = en.target.querySelector('.fsample'); sm.style.fontFamily = sm.dataset.css; io.unobserve(en.target);
     }), { root: pop, rootMargin: '60px' }) : null;
@@ -739,7 +762,8 @@ function fontPicker(host, { get, commit, temp, revert, label }) {
         if (del) { del.setAttribute('role', 'button'); del.setAttribute('aria-label', 'Delete ' + f.label); }
         const row = el('div', { className: 'fp-row' + (f.id === get() ? ' sel' : ''), role: 'option' }, star, el('span', { className: 'fname', textContent: f.label }), sm, ...(del ? [del] : []));
         row.dataset.id = f.id; row.setAttribute('aria-selected', f.id === get());
-        row.addEventListener('pointerenter', () => { cur = rows.indexOf(row); rows.forEach(r => r.classList.remove('on')); row.classList.add('on'); preview(f.id); });
+        row.addEventListener('pointerenter', () => { cur = rows.indexOf(row); rows.forEach(r => r.classList.remove('on')); row.classList.add('on'); hv.enter(f.id); });
+        row.addEventListener('pointermove', e => hv.move(f.id, e));
         row.addEventListener('click', e => {
           if (e.target.closest('.fp-del')) { // remove an added font (asks first)
             close(false);
@@ -778,15 +802,16 @@ function optionPicker(host, { options, get, commit, temp, revert, label }) {
   const txt = el('span', { className: 'fp-txt' }); btn.append(txt, el('span', { className: 'fp-chev', textContent: '▾' }));
   let pop = null, rows = [], cur = -1, hoverT = 0;
   const refresh = () => { const o = options.find(x => x[0] === get()); txt.textContent = o ? o[1] : ''; };
-  const preview = v => { clearTimeout(hoverT); hoverT = setTimeout(() => { PREVIEW = true; temp(v); }, 40); };
-  const undo = () => { clearTimeout(hoverT); if (PREVIEW) { revert(); PREVIEW = false; schedule(); } };
+  const hv = hoverPreviews(v => { PREVIEW = true; temp(v); });
+  const preview = v => hv.key(v);
+  const undo = () => { hv.reset(); clearTimeout(hoverT); if (PREVIEW) { revert(); PREVIEW = false; schedule(); } };
   const close = keep => {
     if (!pop) return;
-    clearTimeout(hoverT); pop.remove(); pop = null;
+    hv.reset(); clearTimeout(hoverT); pop.remove(); pop = null;
     removeEventListener('pointerdown', away, true); removeEventListener('keydown', key, true); removeEventListener('resize', onWin); removeEventListener('scroll', onWin, true);
     btn.setAttribute('aria-expanded', 'false'); if (!keep) undo();
   };
-  const pick = v => { clearTimeout(hoverT); PREVIEW = false; close(true); commit(v); refresh(); btn.focus(); };
+  const pick = v => { hv.cancel(); clearTimeout(hoverT); PREVIEW = false; close(true); commit(v); refresh(); btn.focus(); };
   const away = e => { if (pop && !pop.contains(e.target) && !btn.contains(e.target)) close(false); };
   const onWin = e => { if (pop && !(e && e.target && pop.contains(e.target))) close(false); };
   const focusRow = i => { rows.forEach((r, k) => r.classList.toggle('on', k === i)); cur = i; if (rows[i]) { rows[i].scrollIntoView({ block: 'nearest' }); preview(rows[i].dataset.v); } };
@@ -800,10 +825,12 @@ function optionPicker(host, { options, get, commit, temp, revert, label }) {
   const open = () => {
     if (pop) { close(false); return; }
     pop = el('div', { className: 'fp-pop', role: 'listbox' }); pop.setAttribute('aria-label', label || 'Options'); rows = [];
+    pop.addEventListener('scroll', () => hv.scrolled(), { passive: true }); pop.addEventListener('wheel', () => hv.scrolled(), { passive: true });
     options.forEach(([v, t]) => {
       const row = el('div', { className: 'fp-row' + (v === get() ? ' sel' : ''), role: 'option' }, el('span', { className: 'fname', textContent: t }));
       row.dataset.v = v; row.setAttribute('aria-selected', v === get());
-      row.addEventListener('pointerenter', () => { cur = rows.indexOf(row); rows.forEach(r => r.classList.remove('on')); row.classList.add('on'); preview(v); });
+      row.addEventListener('pointerenter', () => { cur = rows.indexOf(row); rows.forEach(r => r.classList.remove('on')); row.classList.add('on'); hv.enter(v); });
+      row.addEventListener('pointermove', e => hv.move(v, e));
       row.addEventListener('click', () => pick(v));
       pop.appendChild(row); rows.push(row);
     });
@@ -1795,15 +1822,17 @@ document.addEventListener('toggle', syncPreviewLock, true);
    shimmer. Any change re-renders the live preview and takes a fresh picture. While a section is
    open for editing, the live preview stays (dragging works) and the box doesn't lift. */
 let SNAP_T = 0, SNAP_V = 0;
-function dropSnap() { SNAP_V++; const fl = $('fl'); if (!fl) return; fl.classList.remove('snap'); fl.querySelectorAll('.fl-snap').forEach(c => c.remove()); }
-function snapSoon() { clearTimeout(SNAP_T); dropSnap(); SNAP_T = setTimeout(takeSnap, 90); }
+function dropSnap() { SNAP_V++; const fl = $('fl'); if (!fl) return; fl.classList.remove('snap'); fl.querySelectorAll('.fl-snap').forEach(c => { if (c.src) URL.revokeObjectURL(c.src); c.remove(); }); }
+function snapSoon() { clearTimeout(SNAP_T); dropSnap(); if (PREVIEW) return; /* hovering through a list: picture comes after the choice */ SNAP_T = setTimeout(takeSnap, 90); }
 addEventListener('resize', () => snapSoon());
 const svgImg = svg => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg)); });
-async function takeSnap() {
+// the moving background holds still for the moment the picture takes, so the two don't compete
+async function takeSnap() { window.DKD_BG_HOLD = true; try { await makeSnap(); } finally { window.DKD_BG_HOLD = false; } }
+async function makeSnap() {
   const fl = $('fl'); if (!fl || !fl.classList.contains('locked') || !fl.childElementCount) return;
   const v = ++SNAP_V;
   try { await document.fonts.ready; } catch (e) { }
-  await Promise.all([...fl.querySelectorAll('img')].map(i => i.decode ? i.decode().catch(() => { }) : null));
+  await Promise.all([...fl.querySelectorAll('img:not(.fl-snap)')].map(i => i.decode ? i.decode().catch(() => { }) : null));
   if (v !== SNAP_V || !fl.classList.contains('locked')) return;
   // everything is drawn straight at final screen pixels (k = page zoom x display scale), the way the
   // browser draws the live preview, so glyphs and images rasterize the same way
@@ -1812,14 +1841,15 @@ async function takeSnap() {
   const cv = document.createElement('canvas'); cv.className = 'fl-snap';
   cv.width = Math.round(W * k); cv.height = Math.round(H * k);
   cv.style.width = W + 'px'; cv.style.height = H + 'px';
-  const g = cv.getContext('2d', { alpha: false }); // opaque: lets Windows use the same ClearType text smoothing as the live text
+  // opaque: lets Windows use the same ClearType text smoothing as the live text
+  const g = cv.getContext('2d', { alpha: false, willReadFrequently: true }); // CPU-backed: quick to turn into an image
   const cs = getComputedStyle(fl); g.fillStyle = cs.backgroundColor; g.fillRect(0, 0, cv.width, cv.height);
   g.imageSmoothingEnabled = !fl.classList.contains('zoom'); g.imageSmoothingQuality = 'high';
   const dev = r => ({ x: (r.left - R.left) * k, y: (r.top - R.top) * k, w: r.width * k, h: r.height * k });
   const svgs = [...fl.querySelectorAll('svg')], icons = await Promise.all(svgs.map(svgImg));
   if (v !== SNAP_V) return;
   svgs.forEach((sv, i) => { if (icons[i]) { const r = dev(sv.getBoundingClientRect()); g.drawImage(icons[i], r.x, r.y, r.w, r.h); } });
-  fl.querySelectorAll('img').forEach(im => { const r = dev(im.getBoundingClientRect()); if (r.w && r.h) g.drawImage(im, r.x, r.y, r.w, r.h); });
+  fl.querySelectorAll('img:not(.fl-snap)').forEach(im => { const r = dev(im.getBoundingClientRect()); if (r.w && r.h) g.drawImage(im, r.x, r.y, r.w, r.h); });
   const walker = document.createTreeWalker(fl, NodeFilter.SHOW_TEXT);
   for (let t = walker.nextNode(); t; t = walker.nextNode()) {
     const txt = t.textContent; if (!txt.trim()) continue;
@@ -1832,8 +1862,19 @@ async function takeSnap() {
     g.fillText(txt, x, Math.round(y + (h - (asc + desc)) / 2 + asc));
   }
   if (v !== SNAP_V || !fl.classList.contains('locked')) return;
-  fl.querySelectorAll('.fl-snap').forEach(c => c.remove());
-  fl.appendChild(cv); fl.classList.add('snap');
+  // shown as a plain image rather than a drawing surface: a live canvas composited over the WebGL
+  // background can show as a patch of static on some graphics drivers
+  const t0 = performance.now();
+  const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+  window.DKD_SNAP_ENC = performance.now() - t0;
+  if (!blob || v !== SNAP_V || !fl.classList.contains('locked')) return;
+  const img = new Image(); img.className = 'fl-snap'; img.alt = ''; img.draggable = false;
+  img.style.width = W + 'px'; img.style.height = H + 'px';
+  img.src = URL.createObjectURL(blob);
+  try { await img.decode(); } catch (e) { }
+  if (v !== SNAP_V || !fl.classList.contains('locked')) { URL.revokeObjectURL(img.src); return; }
+  fl.querySelectorAll('.fl-snap').forEach(c => { if (c.src) URL.revokeObjectURL(c.src); c.remove(); });
+  fl.appendChild(img); fl.classList.add('snap');
 }
 async function renderPreview() {
   const my = ++ver; save(); if (!PREVIEW) histSoon();
@@ -2650,7 +2691,7 @@ document.addEventListener('click', e => {
   };
   let sweepT;
   const apply = v => {
-    if (root.dataset.theme !== v) { root.classList.add('theming'); clearTimeout(sweepT); sweepT = setTimeout(() => root.classList.remove('theming'), 650); }
+    if (root.dataset.theme !== v) { root.classList.add('theming'); clearTimeout(sweepT); sweepT = setTimeout(() => root.classList.remove('theming'), 420); }
     root.dataset.theme = v;
     requestAnimationFrame(setFavicon);
   };

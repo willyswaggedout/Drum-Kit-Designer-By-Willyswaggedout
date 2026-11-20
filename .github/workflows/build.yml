@@ -1,6 +1,7 @@
 # Builds the Windows app on GitHub's servers.
 # Every push to main builds it; download the result from the run's "Artifacts".
-# Push a tag like v1.0.0 to also publish a release with the downloads attached.
+# Push a tag like v1.1.0 to also publish a release with the downloads attached. The installed app
+# checks the newest release on launch and offers to update (it reads latest.yml from the release).
 name: Build Windows app
 
 on:
@@ -34,7 +35,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Drum-Kit-Designer-Windows
-          path: dist/*.exe
+          path: |
+            dist/*.exe
+            dist/*.exe.blockmap
+            dist/latest.yml
           if-no-files-found: error
 
   release:
@@ -48,4 +52,9 @@ jobs:
           merge-multiple: true
       - uses: softprops/action-gh-release@v2
         with:
+          name: Drum Kit Designer ${{ github.ref_name }}
+          body: |
+            **To install:** download the `Drum-Kit-Designer-Setup` .exe below and run it.
+            Already installed? The app finds this update by itself the next time you open it.
+            `Delete Drum Kit Designer.exe` removes the program and all of its saved data.
           files: out/*
