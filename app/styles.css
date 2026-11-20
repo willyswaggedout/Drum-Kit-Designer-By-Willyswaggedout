@@ -563,3 +563,9 @@ html.no-grain main::before{display:none}
    the dither layer, all of which it draws itself without banding. The grain stays on top. */
 .bg-gl{position:fixed;left:0;top:0;width:100%;height:100%;z-index:-2;pointer-events:none;display:block}
 html.gl-bg body::before,html.gl-bg body::after,html.gl-bg .side::before,html.gl-bg .bg-dither{display:none}
+
+/* which version is running: quiet, out of the way, bottom-left */
+.app-version{position:fixed;left:14px;bottom:10px;z-index:5;pointer-events:none;font-size:11px;letter-spacing:.02em;color:color-mix(in srgb,var(--text2) 80%,var(--bg));font-variant-numeric:tabular-nums;user-select:none}
+.app-version-link{pointer-events:auto;appearance:none;background:none;border:0;padding:4px 0;margin:-4px 0;font:inherit;letter-spacing:inherit;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
+.app-version-link:hover{color:color-mix(in srgb,#fff 25%,var(--accent))}
+.app-version-link:focus-visible{outline:2px solid var(--accent);outline-offset:2px}

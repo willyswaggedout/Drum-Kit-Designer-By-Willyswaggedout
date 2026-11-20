@@ -1,7 +1,7 @@
 {
   "name": "drum-kit-designer",
   "productName": "Drum Kit Designer",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Build custom FL Studio drum kits: folders, .nfo files, label images and banners. By @Willyswaggedout.",
   "main": "electron/main.js",
   "scripts": {

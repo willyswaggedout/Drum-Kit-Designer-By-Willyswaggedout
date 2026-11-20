@@ -1,6 +1,6 @@
 // Desktop wrapper: opens the web app in its own window on Windows and macOS.
 // The app itself lives in ../app and needs no changes to run here.
-const { app, BrowserWindow, Menu, shell, dialog } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog, ipcMain } = require('electron');
 const path = require('path');
 
 let mainWin = null;
@@ -18,10 +18,11 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: true,
+      preload: path.join(__dirname, 'preload.js') // lets the page show update status and start an update
     }
   });
-  win.loadFile(path.join(__dirname, '..', 'app', 'index.html'));
+  win.loadFile(path.join(__dirname, '..', 'app', 'index.html'), { query: { v: app.getVersion() } }); // shown bottom-left
 
   // Open outside links in the system browser, not inside the app.
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -54,17 +55,34 @@ app.on('window-all-closed', () => {
 
 /* ---------- updates ----------
    On every launch the installed app looks at the newest release on GitHub. If it's newer than this
-   copy, it asks first; only on "Update" does it download, then it restarts into the new version.
-   No internet, no release yet, or GitHub unreachable: it says nothing and the app just opens. */
+   copy, it asks first (and the bottom-left label offers it too); only on "Update" does it download,
+   then it restarts into the new version. No internet or GitHub unreachable: it stays quiet.
+   The page is told the state so the label can read "Latest version" or offer the download. */
+const RELEASES = 'https://github.com/willyswaggedout/Drum-Kit-Designer-By-Willyswaggedout/releases/latest';
+let upd = { state: 'checking' };                      // checking | latest | available | downloading | ready | unknown
+let updater = null, asked = false, startDownload = () => shell.openExternal(RELEASES), install = () => { };
+const tell = patch => { upd = Object.assign({}, upd, patch); if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send('dkd-update', upd); };
+ipcMain.handle('dkd-update-status', () => upd);
+ipcMain.handle('dkd-update-start', () => { if (upd.state === 'ready') install(); else if (upd.state === 'available' || upd.state === 'unknown') startDownload(); });
+
 function checkForUpdates() {
-  if (!app.isPackaged) return; // `npm start` while developing: nothing to update
-  let autoUpdater;
-  try { ({ autoUpdater } = require('electron-updater')); } catch (e) { return; }
+  if (!app.isPackaged) { tell({ state: 'unknown' }); return; } // `npm start` while developing
+  try { ({ autoUpdater: updater } = require('electron-updater')); } catch (e) { tell({ state: 'unknown' }); return; }
+  const autoUpdater = updater;
   autoUpdater.autoDownload = false;          // never download without asking
   autoUpdater.autoInstallOnAppQuit = false;
-  let asked = false, downloading = false;
+  startDownload = () => {
+    if (upd.state === 'downloading' || upd.state === 'ready') return;
+    tell({ state: 'downloading', percent: 0 });
+    if (mainWin) mainWin.setTitle('Drum Kit Designer — downloading update…');
+    autoUpdater.downloadUpdate().catch(() => { });
+  };
+  install = () => setImmediate(() => autoUpdater.quitAndInstall(true, true));
+
+  autoUpdater.on('update-not-available', () => tell({ state: 'latest' }));
 
   autoUpdater.on('update-available', async info => {
+    tell({ state: 'available', latest: info.version });
     if (asked) return; asked = true;
     const { response } = await dialog.showMessageBox(mainWin, {
       type: 'info',
@@ -76,19 +94,18 @@ function checkForUpdates() {
       cancelId: 1,
       noLink: true
     });
-    if (response !== 0) return;
-    downloading = true;
-    if (mainWin) mainWin.setTitle('Drum Kit Designer — downloading update…');
-    autoUpdater.downloadUpdate().catch(() => { });
+    if (response === 0) startDownload();
   });
 
   autoUpdater.on('download-progress', p => {
+    tell({ state: 'downloading', percent: Math.round(p.percent) });
     if (!mainWin) return;
     mainWin.setProgressBar(p.percent / 100); // fills the taskbar button
     mainWin.setTitle(`Drum Kit Designer — downloading update… ${Math.round(p.percent)}%`);
   });
 
   autoUpdater.on('update-downloaded', async info => {
+    tell({ state: 'ready', latest: info.version });
     if (mainWin) { mainWin.setProgressBar(-1); mainWin.setTitle('Drum Kit Designer'); }
     const { response } = await dialog.showMessageBox(mainWin, {
       type: 'info',
@@ -100,19 +117,21 @@ function checkForUpdates() {
       cancelId: 1,
       noLink: true
     });
-    if (response === 0) setImmediate(() => autoUpdater.quitAndInstall(true, true));
+    if (response === 0) install();
     else autoUpdater.autoInstallOnAppQuit = true; // "Later": installs next time the app is closed
   });
 
-  autoUpdater.on('error', err => {
+  autoUpdater.on('error', () => {
     if (mainWin) { mainWin.setProgressBar(-1); mainWin.setTitle('Drum Kit Designer'); }
-    if (!downloading) return; // a failed check on launch stays silent
-    downloading = false;
+    const wasDownloading = upd.state === 'downloading';
+    // a failed launch check stays quiet; a failed download goes back to offering the update
+    tell({ state: wasDownloading ? 'available' : (upd.state === 'checking' ? 'unknown' : upd.state) });
+    if (!wasDownloading) return;
     dialog.showMessageBox(mainWin, {
       type: 'warning',
       title: 'Update failed',
       message: "The update couldn't be downloaded.",
-      detail: 'Check your internet connection. The app will offer the update again the next time you open it.',
+      detail: 'Check your internet connection and try again from the link in the bottom-left corner.',
       buttons: ['OK'],
       noLink: true
     });
