@@ -8,3 +8,6 @@ contextBridge.exposeInMainWorld('DKD_UPDATER', {
 contextBridge.exposeInMainWorld('DKD_WINDOW', {
   setBackground: color => ipcRenderer.send('dkd-window-bg', String(color))
 });
+contextBridge.exposeInMainWorld('DKD_FL', {
+  iconFont: () => ipcRenderer.invoke('dkd-fl-icon-font') // FL Studio's icon font from this computer, or null
+});

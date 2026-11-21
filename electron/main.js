@@ -2,6 +2,7 @@
 // The app itself lives in ../app and needs no changes to run here.
 const { app, BrowserWindow, Menu, shell, dialog, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
 let mainWin = null;
 
@@ -63,6 +64,22 @@ let upd = { state: 'checking' };                      // checking | latest | ava
 let updater = null, asked = false, startDownload = () => shell.openExternal(RELEASES), install = () => { };
 const tell = patch => { upd = Object.assign({}, upd, patch); if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send('dkd-update', upd); };
 ipcMain.handle('dkd-update-status', () => upd);
+// FL Studio's browser icons come from its own icon font; the app borrows it from the FL Studio
+// installed on this computer (it isn't shipped with the app)
+function findFlIconFont() {
+  const files = ['Shared\\Artwork\\Fonts\\ILGlyphsEx.ilfont', 'Help\\fonts\\ILGlyphsEx.ttf'];
+  for (const d of 'CDEFGHIJKLMNOPQRSTUVWXYZ') {
+    for (const pf of ['Program Files', 'Program Files (x86)']) {
+      const base = `${d}:\\${pf}\\Image-Line`;
+      let dirs = [];
+      try { dirs = fs.readdirSync(base).filter(n => /^FL Studio/i.test(n)).sort().reverse(); } catch (e) { continue; }
+      for (const dir of [...dirs.map(n => path.join(base, n)), base])
+        for (const f of files) { const p = path.join(dir, f); try { if (fs.statSync(p).size > 10000) return p; } catch (e) { } }
+    }
+  }
+  return null;
+}
+ipcMain.handle('dkd-fl-icon-font', () => { try { const p = findFlIconFont(); return p ? fs.readFileSync(p) : null; } catch (e) { return null; } });
 // the window's own background follows the app's theme, so a freshly widened edge isn't an off-color bar
 ipcMain.on('dkd-window-bg', (_e, c) => { try { if (mainWin && /^(#[0-9a-f]{3,8}|rgba?\([\d.,\s%]+\))$/i.test(c)) mainWin.setBackgroundColor(c); } catch (e) { } });
 ipcMain.handle('dkd-update-start', () => { if (upd.state === 'ready') install(); else if (upd.state === 'available' || upd.state === 'unknown') startDownload(); });

@@ -23,6 +23,7 @@ const FONTS = [
   { id: 'punk1', label: '1 Punk', css: '"DKB 1 Punk", sans-serif', w: '400', web: 'DKB 1 Punk' },
   { id: 'badcoma', label: 'Bad Coma', css: '"DKB Bad Coma", sans-serif', w: '400', web: 'DKB Bad Coma' },
   { id: 'cityburn', label: 'City Burn', css: '"DKB City Burn", sans-serif', w: '400', web: 'DKB City Burn' },
+  { id: 'fingerprinted', label: 'Finger Printed', css: '"DKB Finger Printed", sans-serif', w: '400', web: 'DKB Finger Printed' },
   { id: 'hh', label: 'SF Hollywood Hills', css: '"DKB SF Hollywood Hills", sans-serif', w: '400', web: 'DKB SF Hollywood Hills' },
   { id: 'hhbold', label: 'SF Hollywood Hills Bold', css: '"DKB SF Hollywood Hills Bold", sans-serif', w: '400', web: 'DKB SF Hollywood Hills Bold' },
   { id: 'hhital', label: 'SF Hollywood Hills Italic', css: '"DKB SF Hollywood Hills Italic", sans-serif', w: '400', web: 'DKB SF Hollywood Hills Italic' },
@@ -38,8 +39,9 @@ const FONTS = [
   { id: 'system', label: 'System', css: '"DKB System", sans-serif', w: '400', web: 'DKB System' },
   { id: 'undertown', label: 'Undertown', css: '"DKB Undertown", sans-serif', w: '400', web: 'DKB Undertown' }
 ];
-const ICONS = [['none', 'Folder'], ['7', 'Audio bars (7)'], ['52', 'Star (52)'], ['55', 'Cloud (55)'], ['34', 'Piano keys (34)'], ['custom', 'Other number…']];
-const KNOWN_ICONS = ['7', '52', '55', '34'];
+// icons offered in the pickers: the plain folder, FL's drum and instrument icons, numbers and fun ones
+const ICONS = [['none', 'Folder'], ['52', 'Star'], ['7', 'Audio bars'], ['55', 'Cloud'], ['34', 'Piano keys'], ['773', 'Kick drum'], ['772', 'Snare drum'], ['1007', 'Hi-hat'], ['900', 'Clap'], ['899', 'Snap'], ['774', 'Cymbal'], ['775', 'Bongos'], ['889', 'Cowbell'], ['896', 'Tambourine'], ['897', 'Shaker'], ['847', 'Triangle'], ['846', 'Bell'], ['848', 'Gong'], ['857', 'Chimes'], ['849', 'Glockenspiel'], ['879', 'Drum machine'], ['891', 'Pads'], ['880', 'Whistle'], ['798', 'Microphone'], ['788', 'Lips'], ['789', 'Male voice'], ['790', 'Female voice'], ['791', 'Robot voice'], ['786', 'Sample'], ['787', 'Sliced loop'], ['843', 'Waveform'], ['838', 'Music note'], ['781', 'Treble clef'], ['782', 'Bass clef'], ['856', 'Vinyl record'], ['800', 'CD'], ['796', 'Headphones'], ['797', 'Speaker'], ['795', 'Megaphone'], ['780', 'Piano'], ['769', 'Acoustic guitar'], ['770', 'Electric guitar'], ['858', 'Banjo'], ['771', 'Violin'], ['779', 'Harp'], ['776', 'Trumpet'], ['888', 'Saxophone'], ['859', 'Flute'], ['778', 'Pan flute'], ['777', 'Organ'], ['784', 'Saw wave'], ['785', 'Square wave'], ['783', 'Tuning fork'], ['904', 'Zero'], ['827', 'One'], ['828', 'Two'], ['829', 'Three'], ['830', 'Four'], ['831', 'Five'], ['832', 'Six'], ['833', 'Seven'], ['834', 'Eight'], ['835', 'Nine'], ['894', 'Flame'], ['884', 'Crown'], ['934', 'Lightning'], ['902', 'Snowflake'], ['901', 'Cloud (big)'], ['898', 'Globe'], ['865', 'Smiley'], ['866', 'Sad face'], ['876', 'Silly face'], ['811', 'Thumbs up'], ['812', 'Thumbs down'], ['813', 'Pixel man'], ['806', 'Eye'], ['792', 'Flower'], ['874', 'Gift'], ['49', 'Shopping cart'], ['48', 'New'], ['40', 'Person'], ['970', 'House'], ['860', 'Padlock'], ['875', 'Magnet'], ['873', 'Battery'], ['867', 'Clock'], ['886', 'Paper plane'], ['871', 'Scissors'], ['868', 'Pencil'], ['863', 'Wrench'], ['872', 'Gear'], ['862', 'Bandage'], ['861', 'Link'], ['869', 'No sign'], ['809', 'Question mark'], ['805', 'Info'], ['893', 'Building block'], ['1009', 'Palette'], ['custom', 'Other number…']];
+const KNOWN_ICONS = ICONS.map(o => o[0]).filter(v => v !== 'none' && v !== 'custom');
 // Folder names created automatically when dropped samples have no matching folder.
 const TYPE_NAMES = { '808': '808s', kick: 'Kicks', clap: 'Claps', snare: 'Snares', hat: 'Hihats', open: 'Open hats', crash: 'Crash', perc: 'Percs', vox: 'Vox', fx: 'Fx', oneshot: 'Oneshots', midi: 'MIDI' };
 const TYPE_ORDER = ['808', 'kick', 'clap', 'snare', 'hat', 'open', 'crash', 'perc', 'vox', 'fx', 'oneshot', 'midi'];
@@ -112,15 +114,30 @@ const fontOf = id => FONTS.find(f => f.id === id) || FONTS[0];
 async function ensureFont(f, px) { if (!f.web || !document.fonts) return; try { await document.fonts.load(`${f.w} ${px}px "${f.web}"`); } catch (e) { } }
 function el(tag, props = {}, ...kids) { const e = document.createElement(tag); Object.assign(e, props); kids.forEach(k => k != null && e.append(k)); return e; }
 
+// copy / paste / done glyphs for the small copy-paste buttons
+const COPY_SVG = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 3.8V3.6c0-1-.7-1.6-1.6-1.6H3.6C2.6 2 2 2.700 2 3.600v5.300c0 .9.6 1.600 1.600 1.600h.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+const PASTE_SVG = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="3" y="3" width="10" height="11" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="5.7" y="1.7" width="4.6" height="2.8" rx="1" fill="var(--surface)" stroke="currentColor" stroke-width="1.5"/></svg>';
+const CHECK_SVG = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 /* ---------- icons (simple drawings that stand in for FL's own) ---------- */
 function iconSVG(idx, z = 1, tint = '') {
   const k = String(idx), s = (w, h) => `width="${w * z}" height="${h * z}"`, T = d => tint || d;
+  // FL Studio's own icon when the desktop app found FL Studio on this computer; otherwise the
+  // program's own drawing of it
+  if (k !== 'none' && window.FLI && FLI.ok && FLI.has(k)) return `<span class="fli" style="font-size:${15 * z}px;color:${tint || '#C7CBD1'}" aria-hidden="true">${FLI.char(k)}</span>`;
+  const D = window.DKD_DRAWN_ICONS && DKD_DRAWN_ICONS[k];
+  if (D) return `<svg ${s(15, 15)} viewBox="0 0 16 16" style="color:${tint || '#C7CBD1'}" aria-hidden="true">${D}</svg>`;
   if (k === '7') return `<svg ${s(14, 14)} viewBox="0 0 14 14" aria-hidden="true"><rect x="1" y="9" width="2.4" height="4" fill="${T('#C7CBD1')}"/><rect x="5" y="6" width="2.4" height="7" fill="${T('#C7CBD1')}"/><rect x="9" y="2" width="2.4" height="11" fill="${T('#C7CBD1')}"/></svg>`;
   if (k === '52') return `<svg ${s(15, 15)} viewBox="0 0 24 24" aria-hidden="true"><path fill="${T('#AEB8D0')}" d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 20.9l1.6-7L2 9.2l7.1-.6z"/></svg>`;
   if (k === '55') return `<svg ${s(16, 14)} viewBox="0 0 24 18" aria-hidden="true"><path fill="${T('#E6E8EB')}" d="M6 17h13a5 5 0 0 0 .6-9.96A7 7 0 0 0 6.2 6.1 5.5 5.5 0 0 0 6 17z"/></svg>`;
   if (k === '34') return `<svg ${s(15, 14)} viewBox="0 0 15 14" aria-hidden="true"><rect x=".5" y=".5" width="14" height="13" fill="${T('#E6E8EB')}"/><rect x="3" y="1" width="2" height="7" fill="#1E1F21"/><rect x="7" y="1" width="2" height="7" fill="#1E1F21"/><rect x="11" y="1" width="2" height="7" fill="#1E1F21"/><path d="M5 8v5M10 8v5" stroke="#1E1F21"/></svg>`;
   const folder = `<svg ${s(15, 13)} viewBox="0 0 15 13" aria-hidden="true"><path fill="none" stroke="${T('#9CA3AD')}" d="M.5 2.5v9.5h14V3.5H7L5.5 1.5h-5z"/></svg>`;
   return k === 'none' ? folder : folder + `<span class="fl-badge">#${k}</span>`;
+}
+// small picture for a menu row or button: FL's icon, or its number when the icon font isn't loaded
+function iconChip(v) {
+  if (v === 'custom' || v === '') return '';
+  const drawn = (window.FLI && FLI.ok) || (window.DKD_DRAWN_ICONS && DKD_DRAWN_ICONS[v]) || ['none', '7', '52', '55', '34'].includes(String(v));
+  return drawn ? iconSVG(v, 1) : `<span class="ic-num">${v}</span>`;
 }
 function fillIconSelect(sel) { sel.innerHTML = ''; ICONS.forEach(([v, t]) => sel.add(new Option(t, v))); }
 
@@ -134,10 +151,17 @@ function labelStyle(c) {
     outline: o.outline ?? S.outline, outlineColor: o.outlineColor ?? S.outlineColor, shadow: shAmt(o.shadow ?? S.shadow)
   };
 }
-function renderLabel(text, st) {
+/* Preview sharpness: images for the preview can be drawn at a higher pixel density (rs) so they stay
+   crisp when the preview is zoomed. Logical size stays the same (kept on the canvas as lw/lh), so
+   every layout and editor works in the same units; exported files are always drawn at rs = 1. */
+function sizeCanvas(c, w, h, rs) {
+  c.width = Math.max(1, Math.round(w * rs)); c.height = Math.max(1, Math.round(h * rs)); c.lw = w; c.lh = h;
+  const x = c.getContext('2d'); x.setTransform(rs, 0, 0, rs, 0, 0); return x;
+}
+const lwOf = c => c.lw || c.width, lhOf = c => c.lh || c.height;
+function renderLabel(text, st, rs = 1) {
   const f = fontOf(st.font), c = document.createElement('canvas');
-  c.width = S.lw; c.height = S.lh;
-  let x = c.getContext('2d'), pad = 3, ow = +st.outline || 0;
+  let x = sizeCanvas(c, S.lw, S.lh, rs), pad = 3, ow = +st.outline || 0;
   let size = st.size;
   const setF = () => { x.font = `${f.w} ${size}px ${f.css}`; };
   setF();
@@ -150,11 +174,11 @@ function renderLabel(text, st) {
   const margin = Math.ceil(ow) + (st.shadow ? Math.ceil(st.shadow * 2) + 1 : 1), need = asc + desc + margin * 2;
   let y = Math.round(S.lh / 2) + 1;
   if (need > S.lh || wide > S.lw) {
-    c.width = wide; c.height = Math.max(need, S.lh); x = c.getContext('2d'); setF(); x.textBaseline = 'middle';
+    x = sizeCanvas(c, wide, Math.max(need, S.lh), rs); setF(); x.textBaseline = 'middle';
     if (need > S.lh) y = Math.round((need + asc - desc) / 2);
   }
   const tx = pad + ow;
-  if (st.shadow) { x.shadowColor = 'rgba(0,0,0,.8)'; x.shadowOffsetX = st.shadow; x.shadowOffsetY = st.shadow; x.shadowBlur = st.shadow; }
+  if (st.shadow) { x.shadowColor = 'rgba(0,0,0,.8)'; x.shadowOffsetX = st.shadow * rs; x.shadowOffsetY = st.shadow * rs; x.shadowBlur = st.shadow * rs; } // shadows ignore the scale, so they're scaled by hand
   if (ow > 0) { x.lineJoin = 'round'; x.lineWidth = ow * 2; x.strokeStyle = st.outlineColor; x.strokeText(text, tx, y); x.shadowColor = 'transparent'; }
   x.fillStyle = st.color; x.fillText(text, tx, y);
   return c;
@@ -185,10 +209,9 @@ function bannerLayout(W, H) {
   }
   return out;
 }
-async function renderTextBanner() {
+async function renderTextBanner(rs = 1) {
   const W = +S.bannerW || 250, H = Math.round(W * 63 / 250), c = document.createElement('canvas');
-  c.width = W; c.height = H;
-  const x = c.getContext('2d'), f = fontOf(S.font);
+  const x = sizeCanvas(c, W, H, rs), f = fontOf(S.font);
   let onImage = false;
   if (S.bannerBgMode === 'color') { x.fillStyle = S.bannerBg; x.fillRect(0, 0, W, H); }
   else if (S.bannerBgMode === 'image' && S.bannerBgImage) {
@@ -202,12 +225,12 @@ async function renderTextBanner() {
       } catch (e) { }
     }
   }
-  if (onImage) { x.shadowColor = 'rgba(0,0,0,.6)'; x.shadowBlur = 4; x.shadowOffsetY = 1; }
+  if (onImage) { x.shadowColor = 'rgba(0,0,0,.6)'; x.shadowBlur = 4 * rs; x.shadowOffsetY = 1 * rs; }
   const L = bannerLayout(W, H);
   x.textAlign = 'center'; x.textBaseline = 'middle';
   const put = (t, ink, ow, oc, sh, alpha) => {
     x.save(); x.font = `${t.font.w} ${t.size}px ${t.font.css}`; x.globalAlpha = alpha;
-    if (sh) { x.shadowColor = 'rgba(0,0,0,.8)'; x.shadowOffsetX = 1; x.shadowOffsetY = 1; x.shadowBlur = 1; }
+    if (sh) { x.shadowColor = 'rgba(0,0,0,.8)'; x.shadowOffsetX = rs; x.shadowOffsetY = rs; x.shadowBlur = rs; }
     if (ow > 0) { x.lineJoin = 'round'; x.lineWidth = ow * 2; x.strokeStyle = oc; x.strokeText(t.text, t.x, t.y); x.shadowColor = 'transparent'; }
     x.fillStyle = ink; x.fillText(t.text, t.x, t.y); x.restore();
   };
@@ -220,21 +243,20 @@ function loadImg(src) {
   if (!imgCache.has(src)) imgCache.set(src, new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }));
   return imgCache.get(src);
 }
-async function renderImageBanner() {
+async function renderImageBanner(rs = 1) {
   if (!S.bannerData) return null;
   const img = await loadImg(S.bannerData), iw = img.naturalWidth, ih = img.naturalHeight;
-  const c = document.createElement('canvas'), x = c.getContext('2d');
-  x.imageSmoothingQuality = 'high';
+  const c = document.createElement('canvas'); let x;
   if (S.bannerSize === 'auto') {
-    c.width = 250; c.height = 63;
+    x = sizeCanvas(c, 250, 63, rs); x.imageSmoothingQuality = 'high';
     const sc = Math.max(250 / iw, 63 / ih), w = iw * sc, h = ih * sc;
     x.drawImage(img, (250 - w) / 2, (63 - h) / 2, w, h);
   } else if (S.bannerSize === 'crop' && S.bannerCrop) {
     const r = S.bannerCrop;
-    c.width = r.w; c.height = r.h;
+    x = sizeCanvas(c, r.w, r.h, rs); x.imageSmoothingQuality = 'high';
     x.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
   } else {
-    c.width = iw; c.height = ih;
+    x = sizeCanvas(c, iw, ih, Math.min(rs, 1)); // already the original's own pixels
     x.drawImage(img, 0, 0);
   }
   return c;
@@ -320,26 +342,25 @@ async function fitPos(c) {
   const im = await loadImg(c.img), hh = c.imgH || S.lh, g = lblGeom({ imgMode: 'fit' }, im, S.lw, hh);
   return { fx: g.x / S.lw, fy: g.y / hh, fw: g.w / S.lw, fh: g.h / hh };
 }
-async function renderCustom(c) {
-  const img = await loadImg(c.img), cv = document.createElement('canvas'), x = cv.getContext('2d');
-  x.imageSmoothingQuality = 'high';
-  if (c.imgMode === 'original') { cv.width = img.naturalWidth; cv.height = img.naturalHeight; x.drawImage(img, 0, 0); return cv; }
-  cv.width = S.lw; cv.height = c.imgH || S.lh;
-  const g = lblGeom(c, img, cv.width, cv.height); x.drawImage(img, g.x, g.y, g.w, g.h);
+async function renderCustom(c, rs = 1) {
+  const img = await loadImg(c.img), cv = document.createElement('canvas');
+  if (c.imgMode === 'original') { const x = sizeCanvas(cv, img.naturalWidth, img.naturalHeight, 1); x.drawImage(img, 0, 0); return cv; }
+  const x = sizeCanvas(cv, S.lw, c.imgH || S.lh, rs); x.imageSmoothingQuality = 'high';
+  const g = lblGeom(c, img, cv.lw, cv.lh); x.drawImage(img, g.x, g.y, g.w, g.h);
   return cv;
 }
-async function bannerCanvas() {
+async function bannerCanvas(rs = 1) {
   if (S.bannerMode === 'none') return null;
-  if (S.bannerMode === 'text') { await ensureFont(fontOf(S.bannerFont), 30); await ensureFont(fontOf(S.tagFont), 30); return await renderTextBanner(); }
-  return renderImageBanner();
+  if (S.bannerMode === 'text') { await ensureFont(fontOf(S.bannerFont), 30); await ensureFont(fontOf(S.tagFont), 30); return await renderTextBanner(rs); }
+  return renderImageBanner(rs);
 }
 /* what a folder's label is: its generated text, its own image, or nothing at all */
 function labelKind(c) { return c.labelMode === 'none' ? 'none' : (c.img && c.labelMode !== 'gen') ? 'img' : 'gen'; }
-async function labelCanvas(c, i) {
+async function labelCanvas(c, i, rs = 1) {
   const kind = labelKind(c); if (kind === 'none') return null;
-  if (kind === 'img') return renderCustom(c);
+  if (kind === 'img') return renderCustom(c, rs);
   const st = labelStyle(c); await ensureFont(fontOf(st.font), st.size);
-  return renderLabel(catLabel(c, i), st);
+  return renderLabel(catLabel(c, i), st, rs);
 }
 const toBlob = c => new Promise(r => c.toBlob(r, 'image/png'));
 
@@ -796,12 +817,13 @@ function fontPicker(host, { get, commit, temp, revert, label }) {
   const api = { refresh, close: () => close(false) }; PICKERS.push(api); return api;
 }
 /* a drop-down list that previews each option live while the pointer is over it (same behaviour as the font picker) */
-function optionPicker(host, { options, get, commit, temp, revert, label }) {
+function optionPicker(host, { options, get, commit, temp, revert, label, icons }) {
   const btn = el('button', { type: 'button', className: 'fp-btn' }); btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
   if (label) btn.setAttribute('aria-label', label);
   const txt = el('span', { className: 'fp-txt' }); btn.append(txt, el('span', { className: 'fp-chev', textContent: '▾' }));
   let pop = null, rows = [], cur = -1, hoverT = 0;
-  const refresh = () => { const o = options.find(x => x[0] === get()); txt.textContent = o ? o[1] : ''; };
+  const chip = icons ? el('span', { className: 'fp-ic' }) : null; if (chip) btn.prepend(chip);
+  const refresh = () => { const o = options.find(x => x[0] === get()); txt.textContent = o ? o[1] : ''; if (chip) chip.innerHTML = o ? iconChip(o[0]) : ''; };
   const hv = hoverPreviews(v => { PREVIEW = true; temp(v); });
   const preview = v => hv.key(v);
   const undo = () => { hv.reset(); clearTimeout(hoverT); if (PREVIEW) { revert(); PREVIEW = false; schedule(); } };
@@ -827,18 +849,26 @@ function optionPicker(host, { options, get, commit, temp, revert, label }) {
     pop = el('div', { className: 'fp-pop', role: 'listbox' }); pop.setAttribute('aria-label', label || 'Options'); rows = [];
     pop.addEventListener('scroll', () => hv.scrolled(), { passive: true }); pop.addEventListener('wheel', () => hv.scrolled(), { passive: true });
     options.forEach(([v, t]) => {
-      const row = el('div', { className: 'fp-row' + (v === get() ? ' sel' : ''), role: 'option' }, el('span', { className: 'fname', textContent: t }));
+      const row = el('div', { className: 'fp-row' + (v === get() ? ' sel' : ''), role: 'option' }, ...(icons ? [el('span', { className: 'fp-ic', innerHTML: iconChip(v) })] : []), el('span', { className: 'fname', textContent: t }));
       row.dataset.v = v; row.setAttribute('aria-selected', v === get());
       row.addEventListener('pointerenter', () => { cur = rows.indexOf(row); rows.forEach(r => r.classList.remove('on')); row.classList.add('on'); hv.enter(v); });
       row.addEventListener('pointermove', e => hv.move(v, e));
       row.addEventListener('click', () => pick(v));
       pop.appendChild(row); rows.push(row);
     });
+    if (icons && window.FLI && FLI.found) {
+      // say where the icons come from, with a switch for anyone who'd rather see the program's own drawings
+      const sw = el('input', { type: 'checkbox', checked: FLI.enabled() });
+      sw.onchange = () => { FLI.setEnabled(sw.checked); close(false); };
+      const lab = el('label', { className: 'fp-src' }, sw, el('span', { textContent: 'Use FL Studio’s icons' }));
+      pop.append(el('div', { className: 'fp-foot' }, el('div', { className: 'fp-note', textContent: FLI.enabled() ? 'Icons are shown using your installed FL Studio.' : 'Showing this program’s own icon drawings.' }), lab));
+    }
     host.appendChild(pop);
-    const r = btn.getBoundingClientRect(), w = Math.max(r.width, 190), room = innerHeight - r.bottom - 12, up = room < 220 && r.top > room;
-    pop.style.cssText = `left:${Math.max(8, Math.min(r.left, innerWidth - w - 8))}px;min-width:${w}px;` + (up ? `bottom:${innerHeight - r.top + 6}px;max-height:${Math.min(360, r.top - 16)}px` : `top:${r.bottom + 6}px;max-height:${Math.min(360, room)}px`);
+    const MAXH = icons ? 300 : 360; // long icon lists scroll rather than run down the page
+    const r = btn.getBoundingClientRect(), w = Math.max(r.width, icons ? 220 : 190), room = innerHeight - r.bottom - 12, up = room < 220 && r.top > room;
+    pop.style.cssText = `left:${Math.max(8, Math.min(r.left, innerWidth - w - 8))}px;min-width:${w}px;` + (up ? `bottom:${innerHeight - r.top + 6}px;max-height:${Math.min(MAXH, r.top - 16)}px` : `top:${r.bottom + 6}px;max-height:${Math.min(MAXH, room)}px`);
     btn.setAttribute('aria-expanded', 'true');
-    cur = rows.findIndex(x => x.dataset.v === get()); if (rows[cur]) rows[cur].classList.add('on');
+    cur = rows.findIndex(x => x.dataset.v === get()); if (rows[cur]) { rows[cur].classList.add('on'); rows[cur].scrollIntoView({ block: 'center' }); }
     addEventListener('pointerdown', away, true); addEventListener('keydown', key, true); addEventListener('resize', onWin); addEventListener('scroll', onWin, true);
     pop.addEventListener('pointerleave', undo);
   };
@@ -925,8 +955,16 @@ $('fontDelete').onclick = () => {
   const ids = [...selectedFonts], n = ids.length; if (!n) return;
   confirmDelete(n === 1 ? 'Delete this font?' : `Delete ${n} fonts?`, 'They will be removed from this browser. You can add them again from their files.', n === 1 ? 'Delete font' : 'Delete fonts', () => { removeFonts(ids); setStatus(`Deleted ${n} font${n > 1 ? 's' : ''}.`); });
 };
+// a font file is the same font if its contents match, whatever the file is called
+async function fontHash(buf) {
+  try { const h = await crypto.subtle.digest('SHA-256', buf); return [...new Uint8Array(h)].map(b => b.toString(16).padStart(2, '0')).join(''); }
+  catch (e) { const a = new Uint8Array(buf); let x = 2166136261; for (let i = 0; i < a.length; i++) { x ^= a[i]; x = Math.imul(x, 16777619); } return 'f' + a.length + '-' + (x >>> 0).toString(16); }
+}
 async function addFontFiles(files) {
-  let added = 0, failed = 0;
+  let added = 0, failed = 0, dup = 0;
+  await fontsReady.catch(() => { });
+  const have = new Set();
+  for (const r of await fontDBAll()) if (r && r.data) have.add(r.hash || await fontHash(r.data));
   for (const file of files) {
     if (!FONT_RE.test(file.name)) continue;
     const name = file.name.replace(FONT_RE, '');
@@ -934,14 +972,17 @@ async function addFontFiles(files) {
     const family = 'DKB ' + name.replace(/[^\w ()-]/g, '').trim() + ' ' + id.slice(-4);
     let data;
     try { data = await file.arrayBuffer(); } catch (e) { failed++; continue; }
-    const rec = { id, name, family, data };
-    if (await registerCustomFont(rec)) { fontDBPut(rec); added++; } else failed++;
+    const hash = await fontHash(data);
+    if (have.has(hash)) { dup++; continue; } // already imported (also catches the same file twice in one drop)
+    const rec = { id, name, family, data, hash };
+    if (await registerCustomFont(rec)) { fontDBPut(rec); have.add(hash); added++; } else failed++;
   }
-  if (added || failed) {
-    rebuildFontSelect(); renderFontList(); schedule();
+  if (added || failed || dup) {
+    if (added || failed) { rebuildFontSelect(); renderFontList(); schedule(); }
     let msg = added ? `Added ${added} font${added > 1 ? 's' : ''}. Pick ${added > 1 ? 'one' : 'it'} under Label style.` : '';
+    if (dup) msg += dup === 1 ? ' This font is already imported.' : ` ${dup} of these fonts are already imported.`;
     if (failed) msg += ` ${failed} file${failed > 1 ? 's' : ''} couldn't be read as a font.`;
-    setStatus(msg.trim(), failed && !added ? 'err' : 'ok');
+    setStatus(msg.trim(), (failed || dup) && !added ? 'err' : 'ok');
   }
 }
 $('addFonts').onchange = e => { addFontFiles([...e.target.files]); e.target.value = ''; };
@@ -1269,12 +1310,12 @@ function renderCats() {
     if (open) {
 
       const isel = el('select'); fillIconSelect(isel); isel.setAttribute('aria-label', 'Icon');
-      const inum = el('input', { type: 'number', min: 0, max: 200, className: 'num' }); inum.setAttribute('aria-label', 'Icon number');
+      const inum = el('input', { type: 'number', min: 0, max: 1200, className: 'num' }); inum.setAttribute('aria-label', 'Icon number');
       const known = c.icon === 'none' || KNOWN_ICONS.includes(String(c.icon));
       isel.value = known ? String(c.icon) : 'custom'; inum.value = known ? '' : c.icon; inum.hidden = known;
       const ihost = el('div', { className: 'fp' }); let savedIcon;
       const ipick = optionPicker(ihost, {
-        options: ICONS, label: 'Icon', get: () => isel.value,
+        options: ICONS, label: 'Icon', icons: true, get: () => isel.value,
         commit: v => { savedIcon = undefined; isel.value = v; isel.onchange(); },
         temp: v => { if (savedIcon === undefined) savedIcon = c.icon; c.icon = v === 'custom' ? savedIcon : v; ico.innerHTML = iconSVG(c.icon); schedule(); },
         revert: () => { if (savedIcon !== undefined) { c.icon = savedIcon; ico.innerHTML = iconSVG(c.icon); savedIcon = undefined; } }
@@ -1285,6 +1326,11 @@ function renderCats() {
         ico.innerHTML = iconSVG(c.icon); schedule();
       };
       inum.oninput = () => { c.icon = inum.value || 'none'; ico.innerHTML = iconSVG(c.icon); schedule(); };
+      const icp = iconCopyPaste(() => c.icon, v => {
+        c.icon = v; const k = KNOWN_ICONS.includes(v) || v === 'none';
+        isel.value = k ? v : 'custom'; inum.value = k ? '' : v; inum.hidden = k; ipick.refresh();
+        ico.innerHTML = iconSVG(c.icon); histCommit(); schedule();
+      });
 
       const cb = el('input', { type: 'checkbox', checked: c.colorOn });
       const cc = el('input', { type: 'color', value: c.color, disabled: !c.colorOn }); cc.setAttribute('aria-label', 'Name color');
@@ -1387,7 +1433,7 @@ function renderCats() {
         ];
       }
       const grid = el('div', { className: 'grid' },
-        el('span', { textContent: 'Icon' }), el('div', { className: 'inline' }, ihost, inum),
+        el('span', { textContent: 'Icon' }), el('div', { className: 'inline' }, ihost, inum, icp),
         el('span', { textContent: 'Name color' }), el('label', { className: 'check' }, cb, cc),
         el('span', { textContent: 'Label' }), kindSeg, ...(imgCtl ? [el('span', {}), imgCtl] : []), ...styleRows);
 
@@ -1518,22 +1564,35 @@ function bind(id, key, kind) {
   e.addEventListener('input', h); e.addEventListener('change', h);
 }
 fillIconSelect($('kitIcon'));
+const KIT_OPTS = ICONS.filter(o => o[0] !== 'custom');
+function syncKitIcon() { // a kit icon number outside the list (pasted from a folder) still shows
+  const ks = $('kitIcon'), v = String(S.kitIcon);
+  if (![...ks.options].some(o => o.value === v)) ks.add(new Option('Icon ' + v, v));
+  if (!KIT_OPTS.some(o => o[0] === v)) KIT_OPTS.push([v, 'Icon ' + v]);
+  ks.value = v;
+}
 rebuildFontSelect();
 setupFontPickers();
 [['kitName', 'kitName'], ['tip', 'tip'], ['kitColor', 'kitColor'], ['bannerSub', 'bannerSub'], ['bannerBg', 'bannerBg'], ['kitInk', 'kitInk'], ['tagInk', 'tagInk'], ['kitOutlineColor', 'kitOutlineColor'], ['tagOutlineColor', 'tagOutlineColor'],
  ['font', 'font'], ['bannerFont', 'bannerFont'], ['tagFont', 'tagFont'], ['bgMode', 'bannerBgMode'], ['labelColor', 'labelColor'], ['outlineColor', 'outlineColor'], ['colorOrder', 'colorOrder']].forEach(([a, b]) => bind(a, b));
 [['kitShadow', 'kitShadow'], ['tagShadow', 'tagShadow'], ['kitColorOn', 'kitColorOn'], ['matchColor', 'matchColor'], ['numbering', 'numbering'], ['sortGroup', 'sortGroup'], ['hideImgs', 'hideImgs']].forEach(([a, b]) => bind(a, b, 'check'));
 [['size', 'size'], ['kitSize', 'kitSize'], ['tagSize', 'tagSize'], ['kitOutline', 'kitOutline'], ['tagOutline', 'tagOutline'], ['outline', 'outline'], ['shadow', 'shadow'], ['lw', 'lw'], ['lh', 'lh'], ['heightOfs', 'heightOfs']].forEach(([a, b]) => bind(a, b, 'num'));
-$('kitIcon').value = KNOWN_ICONS.includes(S.kitIcon) || S.kitIcon === 'none' ? S.kitIcon : '52';
+syncKitIcon();
 [...$('kitIcon').options].forEach(o => { if (o.value === 'custom') o.remove(); });
 $('kitIcon').onchange = () => { S.kitIcon = $('kitIcon').value; schedule(); };
 {
   const ks = $('kitIcon'); ks.hidden = true; const kh = el('div', { className: 'fp' }); ks.after(kh); let saved;
-  PICKERS.push(optionPicker(kh, {
-    options: ICONS.filter(o => o[0] !== 'custom'), label: 'Kit folder icon', get: () => ks.value,
+  const kopts = KIT_OPTS;
+  const kp = optionPicker(kh, {
+    options: kopts, label: 'Kit folder icon', icons: true, get: () => ks.value,
     commit: v => { saved = undefined; ks.value = v; ks.onchange(); },
     temp: v => { if (saved === undefined) saved = S.kitIcon; S.kitIcon = v; schedule(); },
     revert: () => { if (saved !== undefined) { S.kitIcon = saved; saved = undefined; } }
+  });
+  PICKERS.push(kp);
+  // a pasted icon that isn't in the list (a folder's own number) is added so it can be shown
+  kh.after(iconCopyPaste(() => S.kitIcon, v => {
+    S.kitIcon = v; syncKitIcon(); kp.refresh(); histCommit(); schedule();
   }));
 }
 {
@@ -1629,7 +1688,7 @@ function wireHot(wrap, main, key) {
   if (pinKey === key && pinWrap && !pinWrap.isConnected) pin(wrap);
 }
 function buildLabelEditor(cv, img, c, indent, z, gap) {
-  const W = cv.width, H = cv.height, T = 3, GX = [0, .25, .5, .75, 1].map(v => v * W), GY = [0, .5, 1].map(v => v * H);
+  const W = lwOf(cv), H = lhOf(cv), T = 3, GX = [0, .25, .5, .75, 1].map(v => v * W), GY = [0, .5, 1].map(v => v * H);
   const near = (vals, v) => vals.map(t => ({ t, d: Math.abs(t - v) })).sort((a, b) => a.d - b.d)[0];
   const ar = img.naturalWidth / img.naturalHeight;
   const wrap = el('div', { className: 'bg-edit' }); wrap.style.cssText = `width:${W * z}px;height:${H * z}px;margin:1px 0 ${gap}px ${indent}px`;
@@ -1700,7 +1759,7 @@ function syncTextControls() {
 }
 const clampSize = v => Math.max(6, Math.min(80, Math.round(v * 2) / 2));
 function buildBannerEditor(cv, img, indent, z, gap, en) {
-  const W = cv.width, H = cv.height, T = 4, KEYS = ['img', 'title', 'tag'];
+  const W = lwOf(cv), H = lhOf(cv), T = 4, KEYS = ['img', 'title', 'tag'];
   const GX = [0, .25, .5, .75, 1].map(v => v * W), GY = [0, .25, .5, .75, 1].map(v => v * H);
   const near = (vals, v) => vals.map(t => ({ t, d: Math.abs(t - v) })).sort((a, b) => a.d - b.d)[0];
   const wrap = el('div', { className: 'bg-edit' }); wrap.style.cssText = `width:${W * z}px;height:${H * z}px;margin:1px 0 ${gap}px ${indent}px`;
@@ -1828,6 +1887,8 @@ function snapSoon() { clearTimeout(SNAP_T); dropSnap(); if (PREVIEW) return; /* 
 // preview's labels at the new sharpness and retaking its picture — waits until the resize settles,
 // so dragging the window edge stays smooth. Until then the current preview simply scales along.
 let RESIZE_T = 0;
+// FL Studio's icons arrive a moment after start (or when the person loads them): redraw with them
+if (window.FLI) FLI.onChange(() => { renderCats(); schedule(); PICKERS.forEach(p => p.refresh()); bulkIconRefresh(); });
 addEventListener('resize', () => {
   clearTimeout(SNAP_T); clearTimeout(RESIZE_T);
   RESIZE_T = setTimeout(() => { schedule(); snapSoon(); }, 160);
@@ -1851,7 +1912,7 @@ async function makeSnap() {
   // opaque: lets Windows use the same ClearType text smoothing as the live text
   const g = cv.getContext('2d', { alpha: false, willReadFrequently: true }); // CPU-backed: quick to turn into an image
   const cs = getComputedStyle(fl); g.fillStyle = cs.backgroundColor; g.fillRect(0, 0, cv.width, cv.height);
-  g.imageSmoothingEnabled = !fl.classList.contains('zoom'); g.imageSmoothingQuality = 'high';
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
   const dev = r => ({ x: (r.left - R.left) * k, y: (r.top - R.top) * k, w: r.width * k, h: r.height * k });
   const svgs = [...fl.querySelectorAll('svg')], icons = await Promise.all(svgs.map(svgImg));
   if (v !== SNAP_V) return;
@@ -1906,10 +1967,12 @@ async function renderPreview() {
   $('styleValue').textContent = `${fontOf(S.font).label}, ${S.size} px`;
 
   await ensureFont(fontOf(S.font), S.size);
-  const bc = await bannerCanvas().catch(() => null);
+  // at 2x the preview's images are drawn at the screen's real pixel density, so they stay sharp
+  const RS = S.zoom >= 2 ? Math.min(6, S.zoom * (window.DKD_ZOOM || 1) * (window.devicePixelRatio || 1)) : 1;
+  const bc = await bannerCanvas(RS).catch(() => null);
   const labels = [];
   const lblImgs = [];
-  for (let i = 0; i < S.cats.length; i++) { labels.push(await labelCanvas(S.cats[i], i).catch(() => null)); lblImgs.push(labelKind(S.cats[i]) === 'img' ? await loadImg(S.cats[i].img).catch(() => null) : null); }
+  for (let i = 0; i < S.cats.length; i++) { labels.push(await labelCanvas(S.cats[i], i, RS).catch(() => null)); lblImgs.push(labelKind(S.cats[i]) === 'img' ? await loadImg(S.cats[i].img).catch(() => null) : null); }
   if (my !== ver) return;
 
   document.documentElement.style.setProperty('--side-w', Math.max(340, Math.round(280 * S.zoom + 60)) + 'px');
@@ -1923,7 +1986,7 @@ async function renderPreview() {
   };
   const img = (cv, indent) => {
     if (!cv) return;
-    const i = el('img', { src: cv.toDataURL(), width: cv.width * z, height: cv.height * z, alt: '' });
+    const i = el('img', { src: cv.toDataURL(), width: lwOf(cv) * z, height: lhOf(cv) * z, alt: '' });
     i.style.cssText = `margin:1px 0 ${gap}px ${indent}px`;
     fl.appendChild(i);
   };
@@ -2103,7 +2166,7 @@ const eachSel = fn => { let n = 0; S.cats.forEach(c => { if (selectedCats.has(c.
   let savedIcons = null;
   const bhost = el('div', { className: 'fp' }); bi.hidden = true; bi.after(bhost);
   const bp = optionPicker(bhost, {
-    options: [['', 'Leave as is'], ...ICONS], label: 'Icon for selected folders', get: () => bi.value,
+    options: [['', 'Leave as is'], ...ICONS], label: 'Icon for selected folders', icons: true, get: () => bi.value,
     commit: v => { savedIcons = null; bi.value = v; bi.onchange(); },
     temp: v => {
       if (!savedIcons) savedIcons = new Map(S.cats.filter(c => selectedCats.has(c.id)).map(c => [c, c.icon]));
@@ -2117,6 +2180,17 @@ const eachSel = fn => { let n = 0; S.cats.forEach(c => { if (selectedCats.has(c.
     else { $('bulkIconNum').hidden = true; if (bi.value !== '') eachSel(c => { c.icon = bi.value; }); }
   };
   $('bulkIconNum').addEventListener('input', () => { const v = $('bulkIconNum').value || 'none'; eachSel(c => { c.icon = v; }); });
+  // copy: the icon the selected folders share (or the one just chosen here); paste: onto all of them
+  $('bulkIconNum').after(iconCopyPaste(() => {
+    if (bi.value === 'custom') return $('bulkIconNum').value || null;
+    if (bi.value !== '') return bi.value;
+    const set = new Set(S.cats.filter(c => selectedCats.has(c.id)).map(c => String(c.icon)));
+    return set.size === 1 ? [...set][0] : null;
+  }, v => {
+    const k = KNOWN_ICONS.includes(v) || v === 'none';
+    bi.value = k ? v : 'custom'; $('bulkIconNum').hidden = k; if (!k) $('bulkIconNum').value = v;
+    bp.refresh(); eachSel(c => { c.icon = v; }); histCommit();
+  }));
   // coloring folders from here recolors their labels too: a folder's own saved label color would
   // otherwise keep its label the old color while the name changes
   const followName = c => { if (c.ls && 'color' in c.ls) delete c.ls.color; };
@@ -2249,7 +2323,7 @@ function syncControls() {
   PICKERS.forEach(p => p.refresh());
   BINDS.forEach(([e, key, kind]) => { if (kind === 'check') e.checked = !!S[key]; else { e.value = S[key] == null ? '' : S[key]; if (e.type === 'range' && typeof paintRange === 'function') paintRange(e); } });
   rebuildFontSelect();
-  $('kitIcon').value = KNOWN_ICONS.includes(S.kitIcon) || S.kitIcon === 'none' ? S.kitIcon : '52';
+  syncKitIcon();
   PICKERS.forEach(p => p.refresh());
   syncSeg(); syncCropUI(); renderBgThumbs();
 }
@@ -2557,9 +2631,6 @@ if (!HAD_SAVE) SESSION_READY.then(restored => restored ? null : loadTemplateFile
 
 /* every color swatch gets a copy and a paste button, so an exact color can be moved from one place to another */
 let COLOR_CLIP = '';
-const COPY_SVG = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 3.8V3.6c0-1-.7-1.6-1.6-1.6H3.6C2.6 2 2 2.700 2 3.600v5.300c0 .9.6 1.600 1.600 1.600h.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-const PASTE_SVG = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="3" y="3" width="10" height="11" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="5.7" y="1.7" width="4.6" height="2.8" rx="1" fill="var(--surface)" stroke="currentColor" stroke-width="1.5"/></svg>';
-const CHECK_SVG = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const parseHex = t => {
   const m = /^\s*#?([0-9a-f]{3}|[0-9a-f]{6})\s*$/i.exec(t || ''); if (!m) return null;
   let h = m[1]; if (h.length === 3) h = h.replace(/./g, '$&$&'); return '#' + h.toUpperCase();
@@ -2583,6 +2654,17 @@ function addColorButtons(inp) {
     flash(ps, CHECK_SVG, true, 'Pasted ' + hex);
   };
   const box = el('span', { className: 'cc' }, cp, ps); inp.after(box);
+}
+/* copy an icon from one folder and paste it onto another (or onto every selected folder) */
+let ICON_CLIP = null;
+function iconCopyPaste(get, set) {
+  const mk = (cls, svg, label) => { const b = el('button', { type: 'button', className: 'cc-btn ' + cls, innerHTML: svg, title: label }); b.setAttribute('aria-label', label); return b; };
+  const cp = mk('cc-copy', COPY_SVG, 'Copy icon'), ps = mk('cc-paste', PASTE_SVG, 'Paste icon');
+  const name = v => { const o = ICONS.find(x => x[0] === String(v)); return o ? o[1] : 'icon ' + v; };
+  const flash = (b, ok, tip) => { b.innerHTML = ok ? CHECK_SVG : PASTE_SVG; b.classList.toggle('bad', !ok); b.title = tip; clearTimeout(b._t); b._t = setTimeout(() => { b.innerHTML = b.classList.contains('cc-copy') ? COPY_SVG : PASTE_SVG; b.classList.remove('bad'); b.title = b.getAttribute('aria-label'); }, 1100); };
+  cp.onclick = () => { const v = get(); if (v == null || v === '') return; ICON_CLIP = String(v); flash(cp, true, 'Copied ' + name(v)); };
+  ps.onclick = () => { if (ICON_CLIP == null) { flash(ps, false, 'Copy an icon first'); return; } set(ICON_CLIP); flash(ps, true, 'Pasted ' + name(ICON_CLIP)); };
+  return el('span', { className: 'cc' }, cp, ps);
 }
 /* sliders show their filled portion; segmented controls get a thumb that glides between options */
 function paintRange(r) {

@@ -12,6 +12,7 @@
 @font-face{font-family:"DKB Impacted";src:url("fonts/impacted.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:"DKB Lower Resolution";src:url("fonts/lower-resolution.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:"DKB New Romantics";src:url("fonts/new-romantics.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"DKB Finger Printed";src:url("fonts/finger-printed.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:"DKB Sidewalk";src:url("fonts/sidewalk.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:"DKB System";src:url("fonts/system.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:"DKB Undertown";src:url("fonts/undertown.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
@@ -183,7 +184,6 @@ ul.flist li button.play.on{background:var(--accent);color:var(--accent-ink)}
 .fl-row{display:flex;align-items:center;gap:7px;height:22px;color:var(--fl-row);white-space:nowrap}
 .fl-badge{font-size:11px;color:#8b9099}
 .fl img{display:block}
-.fl.zoom img{image-rendering:pixelated}
 .side.tall{position:static}
 .side>.note{margin-top:10px;padding:0 4px}
 .side .link,.actions .link{display:block;margin:6px auto 0}
@@ -569,3 +569,20 @@ html.gl-bg body::before,html.gl-bg body::after,html.gl-bg .side::before,html.gl-
 .app-version-link{pointer-events:auto;appearance:none;background:none;border:0;padding:4px 0;margin:-4px 0;font:inherit;letter-spacing:inherit;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
 .app-version-link:hover{color:color-mix(in srgb,#fff 25%,var(--accent))}
 .app-version-link:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* FL Studio's own icons (drawn from FL's icon font when it's available on this computer) */
+.fli{font-family:"FL Studio Icons";font-style:normal;font-weight:400;line-height:1;display:inline-block;speak:never;-webkit-font-smoothing:antialiased}
+.fp-ic{display:inline-flex;align-items:center;justify-content:center;width:20px;flex:none;color:var(--text2)}
+.fp-ic .fli{font-size:15px!important;color:currentColor!important}
+.fp-ic svg{max-width:16px;max-height:16px;color:currentColor!important;--fl-hole:var(--surface2)}
+.folder-row .ico svg{--fl-hole:var(--surface)}
+.fp-ic .fl-badge{display:none}
+.fp-row .fp-ic{margin-right:8px}
+.fp-row.on .fp-ic,.fp-row.sel .fp-ic{color:var(--text)}
+.fp-btn .fp-ic{margin-right:-2px}
+.ic-num{font-size:10px;font-variant-numeric:tabular-nums;color:var(--text3);letter-spacing:-.02em}
+.fp-foot{position:sticky;bottom:-4px;margin:4px -4px -4px;padding:6px 8px;background:var(--surface2);border-top:1px solid var(--sep)}
+.fp-note{font-size:11px;color:var(--text3);line-height:1.35;margin-bottom:6px}
+.fp-src{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer;min-height:24px}
+.fp-load{appearance:none;border:0;background:none;color:var(--accent);font:inherit;font-size:12px;cursor:pointer;padding:4px 2px;text-decoration:underline;text-underline-offset:2px}
+.fp-load:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
