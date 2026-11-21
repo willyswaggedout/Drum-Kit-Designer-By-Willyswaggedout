@@ -2767,7 +2767,7 @@ document.addEventListener('click', e => {
 /* themes: the program's own look. Hovering one previews it. */
 {
   const THEMES = [['umber', 'Umber'], ['midnight', 'Midnight'], ['dark', 'Dark'], ['oxblood', 'Oxblood'], ['dusk', 'Dusk'], ['moss', 'Moss'], ['slate', 'Slate']];
-  const root = document.documentElement, cur = () => root.dataset.theme || 'oxblood';
+  const root = document.documentElement, cur = () => root.dataset.theme || 'slate';
   let saved;
   const setFavicon = () => {
     if (window.DKD_FIXED_ICON) return; // the desktop app keeps its own icon
@@ -2789,7 +2789,7 @@ document.addEventListener('click', e => {
     clearTimeout(winBgT); winBgT = setTimeout(setWinBg, 450); // after the color glide
   };
   setFavicon();
-  if (!THEMES.some(t => t[0] === root.dataset.theme)) apply('oxblood');
+  if (!THEMES.some(t => t[0] === root.dataset.theme)) apply('slate');
   const picker = optionPicker($('themeHost'), {
     options: THEMES, label: 'Theme', get: cur,
     commit: v => { saved = undefined; apply(v); try { localStorage.setItem('dkb-theme', v); } catch (e) { } },

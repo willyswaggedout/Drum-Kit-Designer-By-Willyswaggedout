@@ -114,7 +114,7 @@ void main(){
     // background moves in step with the rest of the interface
     if (theming) cache = null;
     const c = readColorsCached();
-    gl.uniform2f(U.res, w, h); gl.uniform3fv(U.bg, c.bg); gl.uniform3fv(U.acc, c.accent); gl.uniform3fv(U.accS, saturate(c.accent, 1.35));
+    gl.uniform2f(U.res, w, h); gl.uniform3fv(U.bg, c.bg); gl.uniform3fv(U.acc, c.accent); gl.uniform3fv(U.accS, saturate(c.accent, 1.5));
     gl.uniform3fv(U.s2, c.s2); gl.uniform3fv(U.t3, c.t3);
     const tt = (window.DKD_BG_TIME != null ? window.DKD_BG_TIME : (matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : now - t0));
     const a = track(KF1, 28, tt), b = track(KF2, 38, tt), rad = Math.PI / 180;

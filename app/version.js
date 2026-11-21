@@ -4,7 +4,7 @@
 // The desktop app passes its own version in (?v=...) and reports update progress through
 // DKD_UPDATER; in a browser the label asks GitHub for the newest release itself.
 // Keep DKD_VERSION the same as "version" in package.json when releasing.
-window.DKD_VERSION = '1.3.0';
+window.DKD_VERSION = '1.3.1';
 (function () {
   var RELEASES = 'https://github.com/willyswaggedout/Drum-Kit-Designer-By-Willyswaggedout/releases/latest';
   var API = 'https://api.github.com/repos/willyswaggedout/Drum-Kit-Designer-By-Willyswaggedout/releases/latest';
